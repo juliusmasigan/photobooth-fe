@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+import { checkDesigns, checkCamera, checkPrinter } from './utils/startupChecks';
 
 import About from './pages/About';
 import IdleScreen from './pages/IdleScreen';
@@ -60,76 +61,74 @@ function IdleTimer() {
   return null;
 }
 
+// Definition of the startup readiness checks shown on the splash screen.
+const STARTUP_CHECKS = [
+  { id: 'designs', label: 'Verifying design templates', run: checkDesigns },
+  { id: 'camera', label: 'Connecting to camera', run: checkCamera },
+  { id: 'printer', label: 'Checking printer', run: checkPrinter },
+];
+
 function App() {
   const [isReady, setIsReady] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState('Initializing Engine');
+  const [checks, setChecks] = useState(() =>
+    STARTUP_CHECKS.map(({ id, label }) => ({ id, label, status: 'pending', detail: '' }))
+  );
+  const [hasFailure, setHasFailure] = useState(false);
 
-  useEffect(() => {
-    let progressInterval;
+  // Derive progress from how many checks have settled (ok or failed).
+  const settled = checks.filter((c) => c.status === 'ok' || c.status === 'failed').length;
+  const progress = Math.round((settled / STARTUP_CHECKS.length) * 100);
 
-    const completeLoading = () => {
-      setProgress(100);
+  const runChecks = useCallback(async () => {
+    setHasFailure(false);
+    setLoadingMessage('Running system checks');
+    setChecks(STARTUP_CHECKS.map(({ id, label }) => ({ id, label, status: 'checking', detail: '' })));
+
+    // Run all checks concurrently, updating each row as it settles.
+    const results = await Promise.all(
+      STARTUP_CHECKS.map(async (check) => {
+        const result = await check.run();
+        setChecks((prev) =>
+          prev.map((c) =>
+            c.id === check.id
+              ? { ...c, status: result.ok ? 'ok' : 'failed', detail: result.detail }
+              : c
+          )
+        );
+        return result;
+      })
+    );
+
+    if (results.every((r) => r.ok)) {
       setLoadingMessage('Ready');
       setTimeout(() => setIsReady(true), 800);
-    };
-
-    if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
-      if (navigator.serviceWorker.controller) {
-        // Service worker already controls the page, cache is likely hot.
-        setProgress(100);
-        setLoadingMessage('Loading App');
-        setTimeout(() => setIsReady(true), 500);
-        return;
-      }
-
-      // Start simulating progress while caching in the background
-      progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 90) return prev;
-          return prev + Math.random() * 5;
-        });
-      }, 200);
-
-      serviceWorkerRegistration.register({
-        onSuccess: (registration) => {
-          clearInterval(progressInterval);
-          completeLoading();
-        },
-        onUpdate: (registration) => {
-          clearInterval(progressInterval);
-          completeLoading();
-        },
-      });
-
-      // Fallback in case SW fails or takes too long (10s max wait)
-      setTimeout(() => {
-        if (!isReady) {
-          clearInterval(progressInterval);
-          completeLoading();
-        }
-      }, 10000);
-
     } else {
-      // Development mode or no SW support: simulate a quick load
-      progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(progressInterval);
-            setIsReady(true);
-            return 100;
-          }
-          return prev + 20;
-        });
-      }, 100);
+      setHasFailure(true);
+      setLoadingMessage('System checks failed');
     }
-
-    return () => clearInterval(progressInterval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    runChecks();
+
+    // Register the service worker for offline caching, but don't gate entry on it.
+    if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
+      serviceWorkerRegistration.register();
+    }
+  }, [runChecks]);
+
   if (!isReady) {
-    return <SplashScreen progress={progress} message={loadingMessage} />;
+    return (
+      <SplashScreen
+        progress={progress}
+        message={loadingMessage}
+        checks={checks}
+        hasFailure={hasFailure}
+        onRetry={runChecks}
+        onContinue={() => setIsReady(true)}
+      />
+    );
   }
 
   return (

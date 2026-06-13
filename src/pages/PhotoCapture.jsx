@@ -9,6 +9,7 @@ const collageLayoutCount = process.env.REACT_APP_COLLAGE_LAYOUT_COUNT ? parseInt
 const burstCount = process.env.REACT_APP_BOOMERANG_BURST_COUNT ? parseInt(process.env.REACT_APP_BOOMERANG_BURST_COUNT) : 10; // Default to 10 photos in boomerang if not specified
 const enabledModes = process.env.REACT_APP_BOOTH_MODES ? process.env.REACT_APP_BOOTH_MODES.split(',') : ['still', 'collage', 'gif', 'boomerang', 'wigglegram']; // Default to all modes if not specified
 const defaultCountdown = process.env.REACT_APP_COUNTDOWN_TIMER_SECONDS ? parseInt(process.env.REACT_APP_COUNTDOWN_TIMER_SECONDS) : 5; // Default to 5 seconds
+const extraShotsForSelection = process.env.REACT_APP_EXTRA_SHOTS_FOR_SELECTION ? parseInt(process.env.REACT_APP_EXTRA_SHOTS_FOR_SELECTION) : 0; // Default to 2 extra shots for selection if not specified
 const allCaptureModes = {
   still: 'Still Photo',
   collage: 'Collage',
@@ -30,12 +31,38 @@ const PhotoCapture = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
   const [remainingShots, setRemainingShots] = useState(null);
+  const [captureMethod, setCaptureMethod] = useState(null);
   const videoRef = useRef(null);
   const processingResolveRef = useRef(null);
   const { wsEvent } = useWebsocket();
+  const requestId = uuidv4();
+
+
+  const bgImgRef = useRef(null);
+  const fgImgRef = useRef(null);
 
   useEffect(() => {
-    if (wsEvent && wsEvent.type === 'camera_action') {
+    const bgImg = bgImgRef.current;
+    const fgImg = fgImgRef.current;
+    
+    // In React 18 Strict Mode, components mount, unmount, then mount again.
+    // If we cleared the src during the first unmount, we need to restore it on the second mount.
+    if (bgImg && !bgImg.src.includes('api/stream')) {
+      bgImg.src = `${apiBaseUrl}/api/stream`;
+    }
+    if (fgImg && !fgImg.src.includes('api/stream')) {
+      fgImg.src = `${apiBaseUrl}/api/stream`;
+    }
+
+    return () => {
+      // Stop the image stream when unmounting by clearing the src
+      if (bgImg) bgImg.src = "";
+      if (fgImg) fgImg.src = "";
+    };
+  }, []);
+
+  useEffect(() => {
+    if (captureMethod === "gphoto" && wsEvent && wsEvent.type === 'camera_action') {
       if (wsEvent.action === 'capturing_image') {
         // Trigger flash effect
         setTimeout(() => {
@@ -53,11 +80,27 @@ const PhotoCapture = () => {
         }
       }
     }
+
+    if (captureMethod === "stream" && wsEvent && wsEvent.type === 'capture_started') {
+      // Trigger flash effect
+      setIsFlashing(true);
+      setIsProcessing(true);
+      setTimeout(() => {
+        setIsFlashing(false);
+      }, 100); // Quick flash duration
+    } else if (captureMethod === "stream" && wsEvent && wsEvent.type === 'capture_success') {
+      setIsProcessing(false);
+      if (processingResolveRef.current) {
+        processingResolveRef.current();
+        processingResolveRef.current = null;
+      }
+    }
   }, [wsEvent]);
 
   useEffect(() => {
     if (mode) {
       setSelectedMode(mode || 0);
+      setCaptureMethod(getCaptureMethodForMode(mode)); // Set capture method based on mode
     }
   }, [mode]);
 
@@ -73,15 +116,12 @@ const PhotoCapture = () => {
 
   const handleModeClick = (captureMode) => {
     setSelectedMode(captureMode[0]);
+    setCaptureMethod(getCaptureMethodForMode(captureMode[0])); // Set capture method based on mode
   };
 
   const takePhoto = async () => {
-    const requestId = uuidv4();
-
     try {
-      // const captureMethod = (selectedMode === 'still' || selectedMode === 'collage') ? 'gphoto' : 'stream'; // Use gphoto for still/collage to leverage its processing, use stream for boomerang/gif for faster capture
-      const captureMethod = (selectedMode === 'still' || selectedMode === 'collage') ? 'stream' : 'stream'; // Use gphoto for still/collage to leverage its processing, use stream for boomerang/gif for faster capture
-      const results = await fetch(`${apiBaseUrl}/capture`, {
+      const results = await fetch(`${apiBaseUrl}/api/capture`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -104,10 +144,18 @@ const PhotoCapture = () => {
     });
   }
 
-  const takeBurstShots = () => {
+  const getCaptureMethodForMode = (mode) => {
+    if (/still|collage/gi.test(mode)) {
+      return 'stream';
+    } else {
+      return 'stream';
+    }
+  };
+
+  const takeBurstShots = (delay = 150) => {
     return new Promise((resolve) => {
       let count = 0;
-      const intervalMs = 150; // Delay between burst shots
+      const intervalMs = delay; // Delay between burst shots
       const burstInterval = setInterval(() => {
         takePhoto();
         count++;
@@ -119,7 +167,7 @@ const PhotoCapture = () => {
     });
   };
 
-  const runCountdown = (isBurst = false) => {
+  const runCountdown = (isBurst = false, delay = 150) => {
     return new Promise((resolve) => {
       let _countdown = defaultCountdown;
       setCountdown(_countdown);
@@ -130,7 +178,7 @@ const PhotoCapture = () => {
         if (_countdown === 0) {
           clearInterval(intervalId);
           if (isBurst) {
-            takeBurstShots().then(resolve);
+            takeBurstShots(delay).then(resolve);
           } else {
             takePhoto().then(() => {
               resolve();
@@ -148,12 +196,12 @@ const PhotoCapture = () => {
 
     if (selectedMode === 'boomerang') {
       await runCountdown(true);
-    } else {
-      const photosToTake = selectedMode === 'collage' ? collageLayoutCount : 1;
+    } else if (selectedMode === 'gif') {
+      await runCountdown(true, 500);
+    } else if (/still|collage/gi.test(selectedMode)) {
+      const photosToTake = selectedMode === 'still' ? 1 + extraShotsForSelection : collageLayoutCount + extraShotsForSelection; // Take extra shots for still to allow for selection
       for (let i = 0; i < photosToTake; i++) {
-        if (selectedMode === 'collage') {
-          setRemainingShots(photosToTake - i);
-        }
+        setRemainingShots(photosToTake - i);
         await runCountdown(false);
       }
     }
@@ -162,7 +210,14 @@ const PhotoCapture = () => {
     setRemainingShots(null);
     setCountdown(defaultCountdown);
 
-    // navigate("/photo-selection-glass-style", { state: { mode: selectedMode } });
+    setTimeout(() => {
+      if (/collage|still/gi.test(selectedMode)) {
+        navigate("/photo-selection", { state: { mode: selectedMode, requestId } });
+      } else {
+        navigate("/theme-selection", { state: { mode: selectedMode, requestId } });
+      }
+    }, 1000);
+
   };
 
   return (
@@ -171,23 +226,23 @@ const PhotoCapture = () => {
       {/*  Full-screen Camera Viewfinder  */}
       <div className="fixed inset-0 z-0 bg-black">
         {/* Blurred background image */}
-        <img alt="Blurred camera background" className="absolute inset-0 w-full h-full object-cover blur-md opacity-60 scale-110" src={`${apiBaseUrl}/stream`} />
+        <img ref={bgImgRef} alt="Blurred camera background" className="absolute inset-0 w-full h-full object-cover blur-md opacity-60 scale-110" src={`${apiBaseUrl}/api/stream`} />
 
         {/* <video ref={videoRef} autoPlay muted playsInline loop className="w-full h-full object-cover">
-          <source src="http://localhost:8000/api/stream" type="multipart/x-mixed-replace" />
+          <source src={`${apiBaseUrl}/api/stream`} type="multipart/x-mixed-replace" />
           <div className="w-full h-full flex items-center justify-center bg-black/50 text-white">
             Camera feed unavailable
           </div>
         </video> */}
-        <img alt="Group of friends laughing at a party" className="absolute inset-0 w-full h-full object-contain" data-alt="Group of happy friends posing together" src={`${apiBaseUrl}/stream`} />
+        <img ref={fgImgRef} alt="Group of friends laughing at a party" className="absolute inset-0 w-full h-full object-contain" data-alt="Group of happy friends posing together" src={`${apiBaseUrl}/api/stream`} />
         {/*  Viewfinder Overlay Gradient  */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
       </div>
       {/*  Top AppBar (Suppressed standard but kept functional identity)  */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16">
-        <div className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">Litrato</div>
+        <div className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">KuhaBox</div>
         <div className="flex items-center gap-4">
-          {selectedMode === 'collage' && remainingShots !== null && (
+          {/collage|still/gi.test(selectedMode) && remainingShots !== null && (
             <div className="bg-black/50 text-white px-3 py-1 rounded-full text-sm font-semibold border border-white/20 backdrop-blur-md">
               Shots left: {remainingShots}
             </div>

@@ -6,7 +6,7 @@ const modes = [
   {
     id: 'still',
     title: 'Still Photo',
-    desc: 'High-fidelity singular moments captured with prismatic lens enhancements.',
+    desc: 'High-fidelity singular moments captured in crisp, vivid detail.',
     icon: 'photo_camera',
     img: '/StillPhoto.png',
     class: ''
@@ -51,9 +51,9 @@ const ModeSelection = () => {
     <div className="w-full h-[100dvh] bg-background text-on-surface overflow-y-auto">
 
       {/*  TopAppBar  */}
-      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16">
+      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-slate-900/50 backdrop-blur-md dark:bg-slate-950/50 border-b border-white/10 shadow-sm">
         <div className="flex items-center gap-4">
-          <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent font-inter tracking-tight">Litrato</span>
+          <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent font-inter tracking-tight">KuhaBox</span>
         </div>
         <div className="flex items-center gap-2">
           <button className="relative flex items-center justify-center p-2 text-slate-400 hover:bg-white/10 transition-colors active:scale-95 duration-200 rounded-full">
@@ -63,7 +63,7 @@ const ModeSelection = () => {
         </div>
       </header>
 
-      <main className="relative pt-16 pb-48 px-6">
+      <main className="relative py-24 px-6">
 
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="mb-10 text-center">
@@ -76,7 +76,8 @@ const ModeSelection = () => {
             {modes.filter(mode => enabledModes.includes(mode.id)).map((mode) => (
               <div
                 key={mode.id}
-                onClick={() => navigate('/photo-capture', { state: { mode: mode.id } })}
+                // onClick={() => navigate('/photo-capture', { state: { mode: mode.id } })}
+                onClick={() => navigate('/theme-selection', { state: { mode: mode.id } })}
                 className="group relative overflow-hidden glass-card rounded-2xl flex flex-col hover:border-primary-dim transition-all duration-300 cursor-pointer shadow-lg hover:shadow-primary/20 hover:-translate-y-1"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -116,28 +117,6 @@ const ModeSelection = () => {
           </div>
         </div>
       </main>
-
-      {/*  BottomNavBar  */}
-      {/* <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center h-20 px-4 bg-slate-900/40 backdrop-blur-xl dark:bg-slate-950/40 rounded-full mx-6 mb-6 border border-white/20 shadow-2xl shadow-blue-900/20">
-        <div 
-          onClick={() => navigate('/')}
-          className="flex flex-col items-center justify-center text-slate-400 w-12 h-12 hover:text-blue-300 transition-all active:scale-90 duration-150 cursor-pointer"
-        >
-          <span className="material-symbols-outlined" data-icon="home">home</span>
-          <span className="font-inter text-[10px] font-medium mt-1">Home</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-slate-400 w-12 h-12 hover:text-blue-300 transition-all active:scale-90 duration-150 cursor-pointer">
-          <span className="material-symbols-outlined" data-icon="photo_library">photo_library</span>
-          <span className="font-inter text-[10px] font-medium mt-1">Gallery</span>
-        </div>
-        <div className="flex items-center justify-center bg-blue-600 text-white rounded-full w-12 h-12 shadow-lg shadow-blue-500/50 active:scale-90 duration-150 cursor-pointer">
-          <span className="material-symbols-outlined" data-icon="auto_fix_high" data-weight="fill" style={{"fontVariationSettings":"\"FILL\" 1"}}>auto_fix_high</span>
-        </div>
-        <div className="flex flex-col items-center justify-center text-slate-400 w-12 h-12 hover:text-blue-300 transition-all active:scale-90 duration-150 cursor-pointer">
-          <span className="material-symbols-outlined" data-icon="share">share</span>
-          <span className="font-inter text-[10px] font-medium mt-1">Share</span>
-        </div>
-      </nav> */}
 
     </div>
   );

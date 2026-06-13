@@ -30,7 +30,7 @@ const IdleScreen = () => {
       {/*  Top Navigation (Shell Implementation)  */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16">
         <div className="flex items-center gap-2">
-          <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent font-inter tracking-tight">Litrato</span>
+          <img src="/kuhabox-dark.png" alt="KuhaBox" className="h-9 w-auto" />
         </div>
         <div className="flex items-center gap-4">
           <button className="relative flex items-center justify-center p-2 text-slate-400 hover:bg-white/10 transition-colors active:scale-95 duration-200 rounded-full">
@@ -76,13 +76,13 @@ const IdleScreen = () => {
               className="relative z-10 glass-button w-72 h-72 rounded-full flex flex-col items-center justify-center gap-4 border-white/20 shadow-2xl shadow-primary/20 active:scale-90 transition-transform duration-300 backdrop-blur-sm bg-white/5 hover:bg-white/10 group-hover:border-primary/50"
             >
               <div className="w-24 h-24 bg-primary-container rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(233,193,118,0.5)] animate-pulse">
-                <span className="material-symbols-outlined text-white text-5xl" style={{ "fontVariationSettings": "\"FILL\" 1" }}>auto_fix_high</span>
+                <span className="material-symbols-outlined text-white text-5xl" style={{ "fontVariationSettings": "\"FILL\" 1" }}>camera</span>
               </div>
               <span className="text-white font-headline font-extrabold tracking-[0.2em] text-lg">TAP TO START</span>
             </button>
           </div>
           <div className="text-center space-y-2">
-            <p className="text-on-surface-variant font-medium tracking-wide uppercase text-xs opacity-70">Capture the brilliance</p>
+            <p className="text-on-surface-variant font-medium tracking-wide uppercase text-xs opacity-70">Capture Every Moment</p>
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tighter text-on-surface"><br /></h1>
           </div>
         </div>

@@ -6,7 +6,7 @@ const SettingsDashboard = () => {
       
 {/*  Top Navigation for Mobile (Responsive Shell)  */}
 <header className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/20 dark:border-slate-800/50 shadow-sm sticky top-0 z-50 flex items-center justify-between px-6 h-16 w-full md:hidden">
-<div className="text-2xl font-black tracking-tighter text-blue-600 dark:text-blue-400">Prismatic</div>
+<div className="text-2xl font-black tracking-tighter text-blue-600 dark:text-blue-400">KuhaBox</div>
 <div className="flex gap-4">
 <span className="material-symbols-outlined text-slate-500" data-icon="tune">tune</span>
 <span className="material-symbols-outlined text-slate-500" data-icon="settings">settings</span>
@@ -15,7 +15,7 @@ const SettingsDashboard = () => {
 {/*  Side Navigation (Web Desktop)  */}
 <aside className="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-r border-slate-200 dark:border-slate-800 shadow-xl z-50">
 <div className="p-6">
-<div className="text-xl font-bold text-slate-900 dark:text-white mb-1">Prismatic</div>
+<div className="text-xl font-bold text-slate-900 dark:text-white mb-1">KuhaBox</div>
 <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">Studio Settings</div>
 </div>
 <nav className="flex-1 px-4 space-y-2">
@@ -41,7 +41,7 @@ const SettingsDashboard = () => {
 <div className="flex items-center gap-3 px-2">
 <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary font-bold">PA</div>
 <div>
-<div className="text-sm font-bold text-slate-900 dark:text-white">Prismatic Admin</div>
+<div className="text-sm font-bold text-slate-900 dark:text-white">KuhaBox Admin</div>
 <div className="text-xs text-slate-500">v2.4.0-pro</div>
 </div>
 </div>
@@ -133,7 +133,7 @@ const SettingsDashboard = () => {
 <div className="space-y-6">
 <div className="flex items-center gap-6">
 <div className="w-20 h-20 bg-surface-container-highest rounded-xl flex items-center justify-center border border-outline-variant overflow-hidden group relative">
-<img className="w-full h-full object-cover" data-alt="Abstract vibrant geometric logo pattern" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0Uk4jPg7aEFxzDcACDDz_t7eDZ7sSoUIHmiMvNUZrK6I8e2vWlYSBCNAw4Az_yc_2yMVoZ1fGYK1ga4qelFpNe0grgfm70OFplXPvAdi1woO97rqsmbr9vJ07k_3XGaHKJUhKPOydF3DEAHV_gXa086DPAEq7yen-K6tWXQhYYUwVngd9Ou_SsOc6_H3cBlLpi_UNG8PeEXsHTyjNzv3gzjjxXqVyknerRPpYZ8Cmcp2XFlvkRU9GXkfpBLMtJiOeG7lCAiT4Yp_6"/>
+<img className="w-full h-full object-contain p-1" alt="KuhaBox logo" src="/kuhabox-light.png"/>
 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
 <span className="material-symbols-outlined text-white" data-icon="upload">upload</span>
 </div>

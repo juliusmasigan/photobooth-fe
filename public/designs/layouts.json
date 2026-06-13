@@ -1,0 +1,51 @@
+{
+    "collage": [
+        {
+            "id": 1,
+            "name": "Theme 1",
+            "url": "/designs/collage/1.svg",
+            "layout": [
+                {"x": 0, "y": 0, "width": 50, "height": 50},
+                {"x": 50, "y": 0, "width": 50, "height": 50}
+            ]
+        },
+        {
+            "id": 2,
+            "name": "Theme 2",
+            "url": "/designs/collage/2.svg",
+            "layout": [
+                {"x": 0, "y": 0, "width": 50, "height": 50},
+                {"x": 50, "y": 0, "width": 50, "height": 50}
+            ]
+        },
+        {
+            "id": 3,
+            "name": "Theme 3",
+            "url": "/designs/collage/3.svg",
+            "layout": [
+                {"x": 0, "y": 0, "width": 50, "height": 50},
+                {"x": 50, "y": 0, "width": 50, "height": 50}
+            ]
+        }
+    ],
+    "still": [
+        {
+            "id": 1,
+            "name": "Theme 1",
+            "url": "/designs/still/1.svg",
+            "layout": [
+                {"x": 0, "y": 0, "width": 50, "height": 50},
+                {"x": 50, "y": 0, "width": 50, "height": 50}
+            ]
+        },
+        {
+            "id": 2,
+            "name": "Theme 2",
+            "url": "/designs/still/2.svg",
+            "layout": [
+                {"x": 0, "y": 0, "width": 50, "height": 50},
+                {"x": 50, "y": 0, "width": 50, "height": 50}
+            ]
+        }
+    ]
+}
