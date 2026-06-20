@@ -3,8 +3,31 @@
 @tailwind utilities;
 
 @layer base {
+  html,
   body {
     @apply bg-background text-on-surface font-body;
+    /* Kiosk: no pull-to-refresh / scroll chaining. */
+    overscroll-behavior: none;
+  }
+
+  /* Touch kiosk defaults: remove the grey tap flash, kill the 300ms
+     double-tap-zoom delay, and disable text selection / long-press callout. */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Re-enable selection on real text inputs so admin Settings stays usable. */
+  input,
+  textarea {
+    user-select: text;
+    -webkit-user-select: text;
   }
 }
 

@@ -45,13 +45,13 @@ const PhotoSelection = () => {
       {/*  TopAppBar  */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-slate-900/50 backdrop-blur-md dark:bg-slate-950/50 border-b border-white/10 shadow-sm">
         <div className="flex items-center gap-4">
-          <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent font-inter tracking-tight">KuhaBox</span>
+          <img src="/SnapGo-dark.png" alt="SnapGo" className="h-9 w-auto" />
         </div>
         <div className="flex items-center gap-4">
-          <button className="text-slate-400 hover:bg-white/10 transition-colors p-2 rounded-full active:scale-95 duration-200">
+          <button className="flex items-center justify-center w-11 h-11 text-slate-400 hover:bg-white/10 transition-colors rounded-full active:scale-95 duration-200">
             <span className="material-symbols-outlined" data-icon="info">info</span>
           </button>
-          <button className="text-slate-400 hover:bg-white/10 transition-colors p-2 rounded-full active:scale-95 duration-200">
+          <button className="flex items-center justify-center w-11 h-11 text-slate-400 hover:bg-white/10 transition-colors rounded-full active:scale-95 duration-200">
             <span className="material-symbols-outlined" data-icon="settings">settings</span>
           </button>
         </div>
@@ -86,16 +86,16 @@ const PhotoSelection = () => {
                 className={`relative group aspect-square rounded-xl overflow-hidden glass-card transition-all duration-300 cursor-pointer ${isSelected ? 'selected-ring' : 'hover:border-primary/50'}`}
               >
                 <img
-                  className={`w-full h-full object-cover transition-all duration-500 ${isSelected ? '' : 'grayscale group-hover:grayscale-0'}`}
+                  className="w-full h-full object-cover transition-all duration-500"
                   alt={`Photo ${index + 1}`}
                   src={`${apiBaseUrl}${photo}`}
                 />
-                <div className={`absolute inset-0 transition-colors ${isSelected ? 'bg-primary/20' : 'bg-black/20 group-hover:bg-transparent'}`}></div>
-                <div className={`absolute top-3 right-3 rounded-full w-7 h-7 flex items-center justify-center ${isSelected ? 'bg-primary-container text-on-primary-container shadow-lg' : 'bg-white/20 backdrop-blur-md border border-white/20'}`}>
+                <div className={`absolute inset-0 transition-colors ${isSelected ? 'bg-primary/20' : 'bg-black/10'}`}></div>
+                <div className={`absolute top-3 right-3 rounded-full w-9 h-9 flex items-center justify-center ${isSelected ? 'bg-primary-container text-on-primary-container shadow-lg' : 'bg-white/20 backdrop-blur-md border border-white/20'}`}>
                   {isSelected ? (
-                    <span className="material-symbols-outlined text-[18px]" data-icon="check" style={{ "fontVariationSettings": "\"FILL\" 1" }}>check</span>
+                    <span className="material-symbols-outlined text-[20px]" data-icon="check" style={{ "fontVariationSettings": "\"FILL\" 1" }}>check</span>
                   ) : (
-                    <span className="material-symbols-outlined text-[18px] text-white opacity-0 group-hover:opacity-100 transition-opacity" data-icon="add">add</span>
+                    <span className="material-symbols-outlined text-[20px] text-white" data-icon="add">add</span>
                   )}
                 </div>
               </div>

@@ -30,10 +30,10 @@ const IdleScreen = () => {
       {/*  Top Navigation (Shell Implementation)  */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16">
         <div className="flex items-center gap-2">
-          <img src="/kuhabox-dark.png" alt="KuhaBox" className="h-9 w-auto" />
+          <img src="/SnapGo-dark.png" alt="SnapGo" className="h-9 w-auto" />
         </div>
         <div className="flex items-center gap-4">
-          <button className="relative flex items-center justify-center p-2 text-slate-400 hover:bg-white/10 transition-colors active:scale-95 duration-200 rounded-full">
+          <button className="relative flex items-center justify-center w-11 h-11 text-slate-400 hover:bg-white/10 transition-colors active:scale-95 duration-200 rounded-full">
             <span className="absolute material-symbols-outlined animate-ping">info</span>
             <span className="absolute material-symbols-outlined">info</span>
           </button>
@@ -76,7 +76,7 @@ const IdleScreen = () => {
               className="relative z-10 glass-button w-72 h-72 rounded-full flex flex-col items-center justify-center gap-4 border-white/20 shadow-2xl shadow-primary/20 active:scale-90 transition-transform duration-300 backdrop-blur-sm bg-white/5 hover:bg-white/10 group-hover:border-primary/50"
             >
               <div className="w-24 h-24 bg-primary-container rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(233,193,118,0.5)] animate-pulse">
-                <span className="material-symbols-outlined text-white text-5xl" style={{ "fontVariationSettings": "\"FILL\" 1" }}>camera</span>
+                <span className="material-symbols-outlined text-white text-6xl" style={{ "fontVariationSettings": "\"FILL\" 1" }}>camera</span>
               </div>
               <span className="text-white font-headline font-extrabold tracking-[0.2em] text-lg">TAP TO START</span>
             </button>
@@ -117,7 +117,7 @@ const IdleScreen = () => {
                     style={{ transform, zIndex: 40 - index }}
                   >
                     <img
-                      className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity"
+                      className="w-full h-full object-cover"
                       alt={capture.alt}
                       src={capture.src}
                     />

@@ -1,5 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // Only apply hover: utilities on devices that actually support hover, so
+  // decorative hover effects don't get "stuck" after a tap on a touchscreen.
+  future: { hoverOnlyWhenSupported: true },
   darkMode: "class",
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",

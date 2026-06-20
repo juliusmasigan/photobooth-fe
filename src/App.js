@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import { checkDesigns, checkCamera, checkPrinter } from './utils/startupChecks';
+import { enterKiosk } from './utils/kiosk';
 
 import About from './pages/About';
 import IdleScreen from './pages/IdleScreen';
@@ -116,6 +117,21 @@ function App() {
     if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
       serviceWorkerRegistration.register();
     }
+
+    // Enter kiosk mode (fullscreen + portrait lock) on the first user gesture —
+    // browsers forbid these APIs without one. One-shot: detaches after firing.
+    const onFirstGesture = () => {
+      enterKiosk();
+      window.removeEventListener('pointerdown', onFirstGesture);
+      window.removeEventListener('touchstart', onFirstGesture);
+    };
+    window.addEventListener('pointerdown', onFirstGesture, { once: true });
+    window.addEventListener('touchstart', onFirstGesture, { once: true });
+
+    return () => {
+      window.removeEventListener('pointerdown', onFirstGesture);
+      window.removeEventListener('touchstart', onFirstGesture);
+    };
   }, [runChecks]);
 
   if (!isReady) {

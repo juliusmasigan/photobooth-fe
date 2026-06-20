@@ -6,12 +6,12 @@ const About = () => {
 
       {/*  TopAppBar  */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/30">
-        <div className="text-xl font-bold tracking-tight text-white font-headline">KuhaBox</div>
+        <img src="/SnapGo-dark.png" alt="SnapGo" className="h-9 w-auto" />
         <div className="flex gap-4">
-          <button className="text-on-surface-variant hover:bg-white/5 transition-colors p-2 rounded-lg active:scale-95 duration-200">
+          <button className="flex items-center justify-center w-11 h-11 text-on-surface-variant hover:bg-white/5 transition-colors rounded-lg active:scale-95 duration-200">
             <span className="material-symbols-outlined">settings</span>
           </button>
-          <button className="text-primary font-semibold hover:bg-primary/10 transition-colors p-2 rounded-lg active:scale-95 duration-200">
+          <button className="flex items-center justify-center w-11 h-11 text-primary font-semibold hover:bg-primary/10 transition-colors rounded-lg active:scale-95 duration-200">
             <span className="material-symbols-outlined">info</span>
           </button>
         </div>
@@ -27,7 +27,7 @@ const About = () => {
           </div>
           <div className="relative z-10 text-center max-w-3xl px-6">
             <h1 className="font-headline text-6xl md:text-7xl font-extrabold tracking-tight text-white mb-6 text-glow">
-              KuhaBox
+              SnapGo
             </h1>
             <p className="text-lg md:text-xl text-on-surface-variant font-medium leading-relaxed">
               A modern photobooth experience. Capture, customize, and share your moments — where great memories meet effortless sharing.
@@ -36,13 +36,13 @@ const About = () => {
         </section>
         {/*  Content Grid Optimized for Tablet  */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
-          {/*  Feature 1: The KuhaBox Experience  */}
+          {/*  Feature 1: The SnapGo Experience  */}
           <div className="lg:col-span-8 glass-panel rounded-2xl p-10 flex flex-col justify-between group overflow-hidden">
             <div>
               <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center mb-8">
                 <span className="material-symbols-outlined text-primary text-3xl" style={{ "fontVariationSettings": "\"FILL\" 1" }}>filter_tilt_shift</span>
               </div>
-              <h2 className="font-headline text-3xl font-bold text-white mb-6 tracking-tight">The KuhaBox Experience</h2>
+              <h2 className="font-headline text-3xl font-bold text-white mb-6 tracking-tight">The SnapGo Experience</h2>
               <p className="text-on-surface-variant leading-relaxed text-lg max-w-2xl">
                 A complete photobooth in one box. Capture crisp, high-fidelity shots, apply curated themes and layouts, and print or share your creations in seconds — all from an intuitive, kiosk-ready interface.
               </p>
@@ -82,10 +82,10 @@ const About = () => {
               </div>
               <h2 className="font-headline text-4xl font-bold text-white mb-6 tracking-tight">Designed for the Social Era</h2>
               <p className="text-on-surface-variant leading-relaxed text-lg mb-8">
-                KuhaBox isn't just about the capture; it's about the connection. With instant social integration and a curated set of trending filters, your creative vision reaches the world in seconds.
+                SnapGo isn't just about the capture; it's about the connection. With instant social integration and a curated set of trending filters, your creative vision reaches the world in seconds.
               </p>
               <div className="flex flex-wrap gap-3">
-                <span className="px-5 py-2.5 bg-white/5 rounded-full text-sm font-bold uppercase tracking-wider border border-white/10 hover:bg-white/10 transition-colors cursor-default">#KuhaBox</span>
+                <span className="px-5 py-2.5 bg-white/5 rounded-full text-sm font-bold uppercase tracking-wider border border-white/10 hover:bg-white/10 transition-colors cursor-default">#SnapGo</span>
                 <span className="px-5 py-2.5 bg-white/5 rounded-full text-sm font-bold uppercase tracking-wider border border-white/10 hover:bg-white/10 transition-colors cursor-default">#PhotoBooth</span>
                 <span className="px-5 py-2.5 bg-white/5 rounded-full text-sm font-bold uppercase tracking-wider border border-white/10 hover:bg-white/10 transition-colors cursor-default">#SnapAndShare</span>
               </div>

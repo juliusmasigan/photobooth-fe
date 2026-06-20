@@ -1,6 +1,7 @@
 {
-  "short_name": "KuhaBox",
-  "name": "KuhaBox",
+  "short_name": "SnapGo",
+  "name": "SnapGo",
+  "description": "SnapGo — a modern photobooth app",
   "icons": [
     {
       "src": "favicon.ico",
@@ -8,20 +9,21 @@
       "type": "image/x-icon"
     },
     {
-      "src": "logo192.png",
+      "src": "snapgo-192.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "logo512.png",
+      "src": "snapgo-512.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
     }
   ],
   "start_url": ".",
-  "display": "standalone",
+  "display": "fullscreen",
+  "display_override": ["fullscreen"],
   "theme_color": "#131313",
   "background_color": "#131313",
   "orientation": "portrait"
