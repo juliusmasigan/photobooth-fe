@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import InfoOverlay from '../components/InfoOverlay';
 
+const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
 const captures = [
   { id: 1, time: '2m ago', alt: 'Portrait of a woman with prism light effects', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCS1rpZf9G5qi6kDNPFpgDm43oDO6OGt3DdCS6Y-LL09USbDlgJbQOazfWvzMsfEnIINqqQ9xrP_97SRr3nnm5sU0AeDcORDne9Qt5VqtPCVv9-wBBOEjpglsIuUSSyedGBoG68owY8PaMjXa8q5noDSR1PL9Q_oMWAOqGNxeuBzdYH_f7X4uO9vhYjGhMZAvqG4wJQNf4K4w-M7dL0gTXjNdc6kR6jrP5E5sBTy3zSrwAnESATkRNJHVzxw_o6awyYAMSh039x4NVA' },
   { id: 2, time: '5m ago', alt: 'Stunning artistic portrait with chromatic aberration', src: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB2l6l6lGIqORCoXsZbNvOW5MSoQnF6KRY2bsBGCvz1GXtslr4RtwTxlmXYwkjBxYrohuI9fW3z1E7i6sN045OqHoZ57BsIUpC28xvHAMUuhi_lkki705t8ZkJXTDjDnVy9ne-wU6urEz91gV4HiofjzIAqgdGDTSHQBW0FR4J5ho-nFKTY5V8zXBz07gCmrXQ0f9lXlKnivAN4NW8T0wDJdbF0z8sDqy_4yD-QidzyX86AlZf3LxrqCK4qM36LwU2sRbES1T6Is3HG' },
@@ -9,8 +11,48 @@ const captures = [
 ];
 
 const IdleScreen = () => {
+  const [infoOpen, setInfoOpen] = useState(false);
   const [isSpread, setIsSpread] = useState(false);
+  const [captures, setCaptures] = useState([]);
+  const [preview, setPreview] = useState(null);
   const navigate = useNavigate();
+
+  const openPreview = (e, capture) => {
+    if (!isSpread) return;
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const img = e.currentTarget.querySelector('img');
+    const ratio = img && img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : null;
+    setPreview({ capture, rect, ratio, open: false });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setPreview((p) => p && { ...p, open: true }));
+    });
+  };
+
+  const closePreview = () => setPreview((p) => p && { ...p, open: false });
+
+  // Fit the photo's own aspect ratio inside the screen so nothing is cropped.
+  const previewBox = (ratio = 5 / 9) => {
+    const height = Math.min(window.innerHeight * 0.8, (window.innerWidth * 0.9) / ratio);
+    const width = height * ratio;
+    return {
+      top: (window.innerHeight - height) / 2,
+      left: (window.innerWidth - width) / 2,
+      width,
+      height,
+    };
+  };
+
+  useEffect(() => {
+    const getCaptures = async () => {
+      const response = await fetch(`${apiBaseUrl}/api/photos`);
+      const data = await response.json();
+      setCaptures(data.photos || []);
+    };
+
+    getCaptures();
+  }, []);
+
   return (
     <div className="w-full h-screen bg-background text-on-surface">
 
@@ -33,7 +75,7 @@ const IdleScreen = () => {
           <img src="/SnapGo-dark.png" alt="SnapGo" className="h-9 w-auto" />
         </div>
         <div className="flex items-center gap-4">
-          <button className="relative flex items-center justify-center w-11 h-11 text-slate-400 hover:bg-white/10 transition-colors active:scale-95 duration-200 rounded-full">
+          <button onClick={() => setInfoOpen(true)} className="relative flex items-center justify-center w-11 h-11 text-slate-400 transition-transform active:scale-95 duration-200 rounded-full">
             <span className="absolute material-symbols-outlined animate-ping">info</span>
             <span className="absolute material-symbols-outlined">info</span>
           </button>
@@ -42,7 +84,7 @@ const IdleScreen = () => {
       {/*  Main Content Canvas  */}
       <main className="relative z-10 flex flex-col items-center justify-center h-full px-6 pt-16 pb-40">
         {/*  Central Hero Action  */}
-        <div className="flex flex-col items-center gap-12 group">
+        <div className="flex flex-col items-center gap-12">
           <div className="relative">
             {/*  Animated Firefly Effects Behind Button  */}
             <div className="absolute inset-[-40px] z-0 flex items-center justify-center pointer-events-none">
@@ -73,7 +115,7 @@ const IdleScreen = () => {
             {/*  Main CTA Button  */}
             <button
               onClick={() => navigate('/mode-selection')}
-              className="relative z-10 glass-button w-72 h-72 rounded-full flex flex-col items-center justify-center gap-4 border-white/20 shadow-2xl shadow-primary/20 active:scale-90 transition-transform duration-300 backdrop-blur-sm bg-white/5 hover:bg-white/10 group-hover:border-primary/50"
+              className="relative z-10 glass-button w-72 h-72 rounded-full flex flex-col items-center justify-center gap-4 border-white/20 shadow-2xl shadow-primary/20 active:scale-90 transition-transform duration-300 backdrop-blur-sm bg-white/5"
             >
               <div className="w-24 h-24 bg-primary-container rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(233,193,118,0.5)] animate-pulse">
                 <span className="material-symbols-outlined text-white text-6xl" style={{ "fontVariationSettings": "\"FILL\" 1" }}>camera</span>
@@ -94,7 +136,7 @@ const IdleScreen = () => {
               <div className="h-[1px] flex-grow mx-4 bg-white/10"></div>
             </div>
             <div
-              className="relative h-40 w-full flex justify-center items-center cursor-pointer mb-4"
+              className="relative h-40 w-full flex justify-center items-center mb-4"
               onClick={() => setIsSpread(!isSpread)}
             >
               {captures.map((capture, index) => {
@@ -112,14 +154,15 @@ const IdleScreen = () => {
 
                 return (
                   <div
-                    key={capture.id}
-                    className="absolute w-20 h-36 glass-panel rounded-xl border border-white/10 overflow-hidden shadow-xl transition-all duration-500 ease-out hover:border-primary/50"
-                    style={{ transform, zIndex: 40 - index }}
+                    key={index}
+                    onClick={(e) => openPreview(e, capture)}
+                    className="absolute w-20 h-36 glass-panel rounded-xl border border-white/10 overflow-hidden shadow-xl transition-all duration-500 ease-out"
+                    style={{ transform, zIndex: 40 - index, opacity: preview?.capture === capture ? 0 : 1 }}
                   >
                     <img
                       className="w-full h-full object-cover"
-                      alt={capture.alt}
-                      src={capture.src}
+                      alt={capture.id}
+                      src={`${apiBaseUrl}${capture.path}`}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
                     <div className="absolute bottom-3 left-3 pointer-events-none">
@@ -130,7 +173,7 @@ const IdleScreen = () => {
               })}
 
               <div
-                className="absolute w-20 h-36 glass-panel rounded-xl border border-dashed border-white/20 flex flex-col items-center justify-center gap-2 transition-all duration-500 ease-out hover:bg-white/5"
+                className="absolute w-20 h-36 glass-panel rounded-xl border border-dashed border-white/20 flex flex-col items-center justify-center gap-2 transition-all duration-500 ease-out"
                 style={{
                   transform: isSpread
                     ? `translateX(${2 * 80}px) translateY(0px) rotate(8deg)`
@@ -140,7 +183,7 @@ const IdleScreen = () => {
                   pointerEvents: isSpread ? 'auto' : 'none'
                 }}
               >
-                <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/40 hover:text-primary transition-colors">
+                <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/40">
                   <span className="material-symbols-outlined">grid_view</span>
                 </div>
                 <span className="text-[10px] font-bold text-white/40">VIEW ALL</span>
@@ -150,6 +193,42 @@ const IdleScreen = () => {
         </div>
       </main>
 
+      {/*  Recent Capture Preview (card enlarges from its spot in the fan)  */}
+      {preview && (() => {
+        const { capture, rect, ratio, open } = preview;
+        const box = open ? previewBox(ratio || undefined) : { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
+        return (
+          <div className="fixed inset-0 z-[60]">
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur-md transition-opacity duration-[400ms] ease-out"
+              style={{ opacity: open ? 1 : 0 }}
+              onClick={closePreview}
+            ></div>
+            <div
+              className="fixed glass-panel rounded-xl border border-white/10 overflow-hidden shadow-2xl"
+              style={{ ...box, transition: 'top 400ms ease-out, left 400ms ease-out, width 400ms ease-out, height 400ms ease-out' }}
+              onTransitionEnd={(e) => {
+                if (e.propertyName === 'width' && !open) setPreview(null);
+              }}
+            >
+              <img
+                className={`w-full h-full ${ratio ? 'object-cover' : 'object-contain'}`}
+                alt={capture.id}
+                src={`${apiBaseUrl}${capture.path}`}
+              />
+              <button
+                onClick={closePreview}
+                className="absolute top-3 right-3 flex items-center justify-center w-11 h-11 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white active:scale-95 transition-all duration-200"
+                style={{ opacity: open ? 1 : 0 }}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      <InfoOverlay open={infoOpen} onClose={() => setInfoOpen(false)} />
     </div>
   );
 };

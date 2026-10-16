@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { useWebsocket } from '../contexts/WebsocketContext';
 import { useNavigate } from 'react-router-dom';
+import InfoOverlay from '../components/InfoOverlay';
+import useSwipe from '../hooks/useSwipe';
 
 const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
 const collageLayoutCount = process.env.REACT_APP_COLLAGE_LAYOUT_COUNT ? parseInt(process.env.REACT_APP_COLLAGE_LAYOUT_COUNT) : 4; // Default to 4 photos in collage if not specified
@@ -22,6 +24,7 @@ const captureModes = Object.fromEntries(
 );
 
 const PhotoCapture = () => {
+  const [infoOpen, setInfoOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { mode } = location.state || {};
@@ -119,6 +122,21 @@ const PhotoCapture = () => {
     setCaptureMethod(getCaptureMethodForMode(captureMode[0])); // Set capture method based on mode
   };
 
+  // Move to the next (delta = 1) or previous (delta = -1) mode, wrapping around
+  const stepMode = (delta) => {
+    const keys = Object.keys(captureModes);
+    if (!keys.length) return;
+    const current = Math.max(keys.indexOf(selectedMode), 0);
+    const next = keys[(current + delta + keys.length) % keys.length];
+    handleModeClick([next]);
+  };
+
+  const { dragX, isDragging, handlers: swipeHandlers, wasDrag } = useSwipe({
+    onSwipeLeft: () => stepMode(1),
+    onSwipeRight: () => stepMode(-1),
+    disabled: isCapturing || isProcessing
+  });
+
   const takePhoto = async () => {
     try {
       const results = await fetch(`${apiBaseUrl}/api/capture`, {
@@ -211,11 +229,7 @@ const PhotoCapture = () => {
     setCountdown(defaultCountdown);
 
     setTimeout(() => {
-      if (/collage|still/gi.test(selectedMode)) {
-        navigate("/photo-selection", { state: { mode: selectedMode, requestId } });
-      } else {
-        navigate("/theme-selection", { state: { mode: selectedMode, requestId } });
-      }
+      navigate("/theme-selection", { state: { mode: selectedMode, requestId } });
     }, 1000);
 
   };
@@ -227,13 +241,6 @@ const PhotoCapture = () => {
       <div className="fixed inset-0 z-0 bg-black">
         {/* Blurred background image */}
         <img ref={bgImgRef} alt="Blurred camera background" className="absolute inset-0 w-full h-full object-cover blur-md opacity-60 scale-110" src={`${apiBaseUrl}/api/stream`} />
-
-        {/* <video ref={videoRef} autoPlay muted playsInline loop className="w-full h-full object-cover">
-          <source src={`${apiBaseUrl}/api/stream`} type="multipart/x-mixed-replace" />
-          <div className="w-full h-full flex items-center justify-center bg-black/50 text-white">
-            Camera feed unavailable
-          </div>
-        </video> */}
         <img ref={fgImgRef} alt="Group of friends laughing at a party" className="absolute inset-0 w-full h-full object-contain" data-alt="Group of happy friends posing together" src={`${apiBaseUrl}/api/stream`} />
         {/*  Viewfinder Overlay Gradient  */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60"></div>
@@ -247,14 +254,14 @@ const PhotoCapture = () => {
               Shots left: {remainingShots}
             </div>
           )}
-          <button className="relative flex items-center justify-center w-11 h-11 text-slate-400 hover:bg-white/10 transition-colors active:scale-95 duration-200 rounded-full">
+          <button onClick={() => setInfoOpen(true)} disabled={isCapturing || isProcessing} className="relative flex disabled:opacity-40 items-center justify-center w-11 h-11 text-slate-400 transition-transform active:scale-95 duration-200 rounded-full">
             <span className="absolute material-symbols-outlined animate-ping">info</span>
             <span className="absolute material-symbols-outlined">info</span>
           </button>
         </div>
       </header>
       {/*  Main Canvas Area: Countdown  */}
-      <main className="relative z-10 flex flex-col items-center justify-center h-screen">
+      <main {...swipeHandlers} className="relative z-10 flex flex-col items-center justify-center h-screen touch-pan-y select-none">
         <div className={`flex flex-col items-center transition-all duration-300 ${(isCapturing || isProcessing) ? 'animate-pulse' : ''}`}>
           <div className={`bg-white/10 backdrop-blur-xl border border-white/20 px-8 py-3 rounded-full mb-8 absolute top-1/4 transition-opacity duration-300 ${(isCapturing || isProcessing) ? 'opacity-100' : 'opacity-0'}`}>
             <span className="text-white text-sm font-bold tracking-[0.2em] uppercase">
@@ -265,20 +272,22 @@ const PhotoCapture = () => {
             {isCapturing && countdown > 0 && (
               <span
                 key={`ping-${countdown}`}
-                className="absolute text-[12rem] md:text-[16rem] font-black text-white countdown-glow leading-none select-none z-0 animate-ping opacity-60"
+                className="absolute text-[12rem] md:text-[16rem] font-black text-transparent [-webkit-text-stroke:2px_rgba(255,255,255,0.9)] md:[-webkit-text-stroke:3px_rgba(255,255,255,0.9)] leading-none select-none z-0 animate-ping opacity-20"
               >
                 {countdown}
               </span>
             )}
-            <span className={`absolute text-[12rem] md:text-[16rem] font-black text-white countdown-glow leading-none select-none z-10 transition-all duration-300 ${isCapturing && countdown === 0 ? 'scale-125 text-primary opacity-0' : 'opacity-100'}`}>
-              {countdown > 0 ? countdown : ''}
-            </span>
+            {isCapturing && (
+              <span className={`absolute text-[12rem] md:text-[16rem] font-black text-transparent [-webkit-text-stroke:2px_rgba(255,255,255,0.9)] md:[-webkit-text-stroke:3px_rgba(255,255,255,0.9)] drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)] leading-none select-none z-10 transition-all duration-300 ${countdown === 0 ? 'scale-125 opacity-0' : 'opacity-40'}`}>
+                {countdown > 0 ? countdown : ''}
+              </span>
+            )}
 
             {/* Camera Flash Effect */}
             <div className={`fixed inset-0 bg-white z-[100] pointer-events-none transition-opacity duration-[100ms] ease-out ${isFlashing ? 'opacity-80' : 'opacity-0'}`} />
 
-            {/*  Idle racing light streaks  */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-full border-[2px] border-white/5 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
+            {/*  Countdown racing light streaks  */}
+            <div className={`absolute inset-0 pointer-events-none overflow-hidden rounded-full border-[2px] border-white/5 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] transition-opacity duration-300 ${isCapturing && countdown > 0 ? 'opacity-100' : 'opacity-0'}`}>
               {/* Streak 1 */}
               <div
                 className="absolute top-[35%] w-[100%] h-[3px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-80"
@@ -305,32 +314,23 @@ const PhotoCapture = () => {
       </main>
       {/*  Bottom Controls Area  */}
       <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center pb-12 px-8">
-        {/*  Gallery Preview (Small Thumbnail)  */}
-        {/* <div className="absolute left-10 bottom-16 md:bottom-20">
-          <div className="w-14 h-14 rounded-lg border-2 border-white/40 overflow-hidden shadow-lg rotate-[-6deg] hover:rotate-0 transition-transform cursor-pointer">
-            <img alt="Recent photo" className="w-full h-full object-cover" data-alt="Thumbnail of last photo taken" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTObHKKS95M5QOt5qDYnS47KubOY1Q4b3ynV9IYMf-ymsUjlbJMvbSws6jMS_tnPHJw9OqF9j14NAe589xYZ3ibuTP3NmiI64OV-PT-cNWMt_mDLcnNH-QVIlDjp1vdckf7gGvxsD3Yr2CfCr_-rpV3iuh5YKTa3Va8IaY2fjBNuZoLHvsNXGBDrOqC9HOpULZxrSFKz75X3kLlTjBhnArRzGuTPzWists2LibHc55-RBAg4Nxrwiy185-b2YKUjQKEmr5crRvLd8N" />
-          </div>
-        </div> */}
         {/*  Shutter Button Container  */}
         <div className="relative flex items-center justify-center">
           {/*  Animated outer ring (visual only)  */}
           <div className={`absolute w-24 h-24 rounded-full border-2 border-white/30 transition-all duration-300 opacity-20 ${(isCapturing || isProcessing) ? 'animate-ping border-primary' : ''}`}></div>
           {/*  Main Shutter Button  */}
           <button
-            className={`relative w-20 h-20 rounded-full bg-white flex items-center justify-center group transition-transform duration-150 shutter-glow ${(isCapturing || isProcessing) ? 'scale-90 bg-primary/20 cursor-not-allowed' : 'active:scale-90'}`}
+            className={`relative w-20 h-20 rounded-full bg-white flex items-center justify-center transition-transform duration-150 shutter-glow ${(isCapturing || isProcessing) ? 'scale-90 bg-primary/20' : 'active:scale-90'}`}
             onClick={startCapture}
             disabled={isCapturing || isProcessing}
           >
             <div className="w-16 h-16 rounded-full border-4 border-slate-900/10 bg-white"></div>
-            {/*  Shutter Action Icon (Hidden by default, used for interaction)  */}
-            <span className="absolute inset-0 flex items-center justify-center text-primary-container opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="material-symbols-outlined scale-150" data-icon="camera">camera</span>
-            </span>
           </button>
         </div>
         {/*  Mode Selector  */}
         <div
-          className="mt-8 relative w-full overflow-hidden flex justify-center items-center h-12"
+          {...swipeHandlers}
+          className="mt-8 relative w-full overflow-hidden flex justify-center items-center h-12 touch-pan-y select-none"
           style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 20%, black 80%, transparent)', maskImage: 'linear-gradient(to right, transparent, black 20%, black 80%, transparent)' }}
         >
           <div className="relative w-full max-w-md h-full flex justify-center items-center">
@@ -346,16 +346,15 @@ const PhotoCapture = () => {
               return (
                 <span
                   key={captureMode[0]}
-                  onClick={() => handleModeClick(captureMode)}
-                  className={`absolute text-xs font-bold tracking-widest uppercase cursor-pointer transition-all duration-300 ease-out whitespace-nowrap
+                  onClick={() => { if (!wasDrag.current && !isCapturing && !isProcessing) handleModeClick(captureMode); }}
+                  className={`absolute text-xs font-bold tracking-widest uppercase whitespace-nowrap ${isDragging ? '' : 'transition-all duration-300 ease-out'}
                     ${isCenter
                       ? 'text-white border-b-2 border-primary pb-1'
-                      : 'text-white/40 pb-1 hover:text-white/70'}`}
+                      : 'text-white/40 pb-1'}`}
                   style={{
-                    transform: `translateX(${offset * 120}px) scale(${isCenter ? 1 : 0.85})`,
+                    transform: `translateX(${offset * 120 + dragX}px) scale(${isCenter ? 1 : 0.85})`,
                     opacity: distance === 0 ? 1 : distance === 1 ? 0.6 : 0.2,
-                    zIndex: 10 - distance,
-                    cursor: 'pointer'
+                    zIndex: 10 - distance
                   }}
                 >
                   {captureMode[1]}
@@ -370,6 +369,7 @@ const PhotoCapture = () => {
         {/*  BottomNavBar would be here if not in camera mode  */}
       </nav>
 
+      <InfoOverlay open={infoOpen} onClose={() => setInfoOpen(false)} />
     </div>
   );
 };

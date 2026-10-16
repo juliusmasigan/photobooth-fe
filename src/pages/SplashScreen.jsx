@@ -41,12 +41,11 @@ const SplashScreen = ({
                 {/*  Centered Logo Branding Section  */}
                 <div className="flex-1 flex flex-col items-center justify-center w-full">
                     {/*  Logo  */}
-                    <div className="relative group">
-                        <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-xl scale-110 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                    <div className="relative">
                         <img
                             src="/SnapGo-dark.png"
                             alt="SnapGo"
-                            className="relative w-72 md:w-80 h-auto rounded-xl shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]"
+                            className="relative w-72 md:w-80 h-auto rounded-xl shadow-2xl"
                         />
                     </div>
                     {/*  Tagline  */}
@@ -113,14 +112,14 @@ const SplashScreen = ({
                         <div className="mt-6 flex flex-col gap-3">
                             <button
                                 onClick={onRetry}
-                                className="w-full py-3 px-6 rounded-xl bg-primary text-on-primary font-sans text-xs font-semibold uppercase tracking-wider shadow-[0_0_15px_rgba(45,91,255,0.4)] transition-transform hover:scale-[1.02]"
+                                className="w-full py-3 px-6 rounded-xl bg-primary text-on-primary font-sans text-xs font-semibold uppercase tracking-wider shadow-[0_0_15px_rgba(45,91,255,0.4)] transition-transform active:scale-95"
                             >
                                 <span className="material-symbols-outlined text-base align-middle mr-2">refresh</span>
                                 Retry
                             </button>
                             <button
                                 onClick={onContinue}
-                                className="w-full py-3 px-6 rounded-xl bg-surface border border-outline/50 text-on-surface-variant font-sans text-xs font-semibold uppercase tracking-wider transition-colors hover:text-on-surface"
+                                className="w-full py-3 px-6 rounded-xl bg-surface border border-outline/50 text-on-surface-variant font-sans text-xs font-semibold uppercase tracking-wider"
                             >
                                 Continue anyway
                             </button>

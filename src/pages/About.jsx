@@ -8,10 +8,10 @@ const About = () => {
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/30">
         <img src="/SnapGo-dark.png" alt="SnapGo" className="h-9 w-auto" />
         <div className="flex gap-4">
-          <button className="flex items-center justify-center w-11 h-11 text-on-surface-variant hover:bg-white/5 transition-colors rounded-lg active:scale-95 duration-200">
+          <button className="flex items-center justify-center w-11 h-11 text-on-surface-variant transition-transform rounded-lg active:scale-95 duration-200">
             <span className="material-symbols-outlined">settings</span>
           </button>
-          <button className="flex items-center justify-center w-11 h-11 text-primary font-semibold hover:bg-primary/10 transition-colors rounded-lg active:scale-95 duration-200">
+          <button className="flex items-center justify-center w-11 h-11 text-primary font-semibold transition-transform rounded-lg active:scale-95 duration-200">
             <span className="material-symbols-outlined">info</span>
           </button>
         </div>
@@ -37,7 +37,7 @@ const About = () => {
         {/*  Content Grid Optimized for Tablet  */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
           {/*  Feature 1: The SnapGo Experience  */}
-          <div className="lg:col-span-8 glass-panel rounded-2xl p-10 flex flex-col justify-between group overflow-hidden">
+          <div className="lg:col-span-8 glass-panel rounded-2xl p-10 flex flex-col justify-between overflow-hidden">
             <div>
               <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center mb-8">
                 <span className="material-symbols-outlined text-primary text-3xl" style={{ "fontVariationSettings": "\"FILL\" 1" }}>filter_tilt_shift</span>
@@ -85,9 +85,9 @@ const About = () => {
                 SnapGo isn't just about the capture; it's about the connection. With instant social integration and a curated set of trending filters, your creative vision reaches the world in seconds.
               </p>
               <div className="flex flex-wrap gap-3">
-                <span className="px-5 py-2.5 bg-white/5 rounded-full text-sm font-bold uppercase tracking-wider border border-white/10 hover:bg-white/10 transition-colors cursor-default">#SnapGo</span>
-                <span className="px-5 py-2.5 bg-white/5 rounded-full text-sm font-bold uppercase tracking-wider border border-white/10 hover:bg-white/10 transition-colors cursor-default">#PhotoBooth</span>
-                <span className="px-5 py-2.5 bg-white/5 rounded-full text-sm font-bold uppercase tracking-wider border border-white/10 hover:bg-white/10 transition-colors cursor-default">#SnapAndShare</span>
+                <span className="px-5 py-2.5 bg-white/5 rounded-full text-sm font-bold uppercase tracking-wider border border-white/10">#SnapGo</span>
+                <span className="px-5 py-2.5 bg-white/5 rounded-full text-sm font-bold uppercase tracking-wider border border-white/10">#PhotoBooth</span>
+                <span className="px-5 py-2.5 bg-white/5 rounded-full text-sm font-bold uppercase tracking-wider border border-white/10">#SnapAndShare</span>
               </div>
             </div>
             <div className="flex-1 w-full aspect-video rounded-2xl overflow-hidden relative order-1 md:order-2">
@@ -98,8 +98,8 @@ const About = () => {
         </div>
         {/*  Action Area  */}
         <div className="mt-20 flex flex-col items-center">
-          <button className="group flex items-center gap-3 bg-primary text-white px-10 py-5 rounded-full font-headline font-bold text-xl hover:bg-primary-dim transition-all active:scale-95 shadow-2xl shadow-primary/30">
-            <span className="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
+          <button className="flex items-center gap-3 bg-primary text-white px-10 py-5 rounded-full font-headline font-bold text-xl transition-all active:scale-95 shadow-2xl shadow-primary/30">
+            <span className="material-symbols-outlined">arrow_back</span>
             Back to Start
           </button>
           <div className="mt-12 flex flex-col items-center gap-2">
@@ -111,19 +111,19 @@ const About = () => {
       {/*  BottomNavBar  */}
       <nav className="fixed bottom-0 w-full z-50 flex justify-center items-center px-4 pb-8 pt-4">
         <div className="flex justify-around items-center w-full max-w-2xl bg-gray-950/80 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-2xl px-2 py-2">
-          <div className="flex flex-col items-center justify-center text-on-surface-variant px-6 py-2.5 hover:text-white transition-colors cursor-pointer group">
-            <span className="material-symbols-outlined group-hover:scale-110 transition-transform">photo_camera</span>
-            <span className="font-headline text-[10px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-70 group-hover:opacity-100">Capture</span>
+          <div className="flex flex-col items-center justify-center text-on-surface-variant px-6 py-2.5">
+            <span className="material-symbols-outlined">photo_camera</span>
+            <span className="font-headline text-[10px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-70">Capture</span>
           </div>
-          <div className="flex flex-col items-center justify-center text-on-surface-variant px-6 py-2.5 hover:text-white transition-colors cursor-pointer group">
-            <span className="material-symbols-outlined group-hover:scale-110 transition-transform">grid_view</span>
-            <span className="font-headline text-[10px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-70 group-hover:opacity-100">Gallery</span>
+          <div className="flex flex-col items-center justify-center text-on-surface-variant px-6 py-2.5">
+            <span className="material-symbols-outlined">grid_view</span>
+            <span className="font-headline text-[10px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-70">Gallery</span>
           </div>
-          <div className="flex flex-col items-center justify-center text-on-surface-variant px-6 py-2.5 hover:text-white transition-colors cursor-pointer group">
-            <span className="material-symbols-outlined group-hover:scale-110 transition-transform">auto_awesome</span>
-            <span className="font-headline text-[10px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-70 group-hover:opacity-100">Lens</span>
+          <div className="flex flex-col items-center justify-center text-on-surface-variant px-6 py-2.5">
+            <span className="material-symbols-outlined">auto_awesome</span>
+            <span className="font-headline text-[10px] font-bold uppercase tracking-[0.15em] mt-1.5 opacity-70">Lens</span>
           </div>
-          <div className="flex flex-col items-center justify-center bg-primary text-white rounded-xl px-8 py-2.5 cursor-default shadow-lg shadow-primary/20">
+          <div className="flex flex-col items-center justify-center bg-primary text-white rounded-xl px-8 py-2.5 shadow-lg shadow-primary/20">
             <span className="material-symbols-outlined" style={{ "fontVariationSettings": "\"FILL\" 1" }}>info</span>
             <span className="font-headline text-[10px] font-bold uppercase tracking-[0.15em] mt-1.5">About</span>
           </div>

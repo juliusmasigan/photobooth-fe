@@ -20,19 +20,19 @@ const SettingsDashboard = () => {
 </div>
 <nav className="flex-1 px-4 space-y-2">
 {/*  Active Tab: Camera & Hardware mapped to current context  */}
-<a className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ease-in-out font-inter text-sm font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-r-4 border-blue-600" href="#">
+<a className="flex items-center gap-3 px-4 py-3 rounded-lg font-inter text-sm font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-r-4 border-blue-600" href="#">
 <span className="material-symbols-outlined" data-icon="photo_camera">photo_camera</span>
                 Camera &amp; Hardware
             </a>
-<a className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ease-in-out font-inter text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50" href="#">
+<a className="flex items-center gap-3 px-4 py-3 rounded-lg font-inter text-sm font-medium text-slate-600 dark:text-slate-400" href="#">
 <span className="material-symbols-outlined" data-icon="palette">palette</span>
                 Branding &amp; Themes
             </a>
-<a className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ease-in-out font-inter text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50" href="#">
+<a className="flex items-center gap-3 px-4 py-3 rounded-lg font-inter text-sm font-medium text-slate-600 dark:text-slate-400" href="#">
 <span className="material-symbols-outlined" data-icon="share">share</span>
                 Social Sharing
             </a>
-<a className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ease-in-out font-inter text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/50" href="#">
+<a className="flex items-center gap-3 px-4 py-3 rounded-lg font-inter text-sm font-medium text-slate-600 dark:text-slate-400" href="#">
 <span className="material-symbols-outlined" data-icon="collections">collections</span>
                 Gallery
             </a>
@@ -68,7 +68,7 @@ const SettingsDashboard = () => {
 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
 <div className="space-y-4">
 <label className="block text-sm font-medium text-on-surface-variant">ISO Sensitivity</label>
-<input className="w-full h-2 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary-container" type="range"/>
+<input className="w-full h-2 bg-surface-container-highest rounded-lg appearance-none accent-primary-container" type="range"/>
 <div className="flex justify-between text-xs text-on-surface-variant">
 <span>100</span>
 <span>Auto</span>
@@ -119,7 +119,7 @@ const SettingsDashboard = () => {
 <div className="pt-4 flex flex-col items-center justify-center p-6 border-2 border-dashed border-outline-variant rounded-xl bg-surface-container-low">
 <span className="material-symbols-outlined text-4xl text-on-surface-variant mb-2" data-icon="qr_code_2">qr_code_2</span>
 <span className="text-sm font-medium text-on-surface-variant">QR Sharing Code</span>
-<button className="mt-4 text-xs font-bold text-primary px-4 py-2 border border-primary/30 rounded-full hover:bg-primary/10 transition-colors">REGENERATE</button>
+<button className="mt-4 text-xs font-bold text-primary px-4 py-2 border border-primary/30 rounded-full">REGENERATE</button>
 </div>
 </div>
 </div>
@@ -132,11 +132,8 @@ const SettingsDashboard = () => {
 </div>
 <div className="space-y-6">
 <div className="flex items-center gap-6">
-<div className="w-20 h-20 bg-surface-container-highest rounded-xl flex items-center justify-center border border-outline-variant overflow-hidden group relative">
+<div className="w-20 h-20 bg-surface-container-highest rounded-xl flex items-center justify-center border border-outline-variant overflow-hidden relative">
 <img className="w-full h-full object-contain p-1" alt="SnapGo logo" src="/SnapGo-light.png"/>
-<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
-<span className="material-symbols-outlined text-white" data-icon="upload">upload</span>
-</div>
 </div>
 <div className="flex-1">
 <h4 className="text-sm font-bold text-white">Brand Logo</h4>
@@ -179,7 +176,7 @@ const SettingsDashboard = () => {
 <div className="text-xs text-on-surface-variant">Post directly to stories</div>
 </div>
 </div>
-<div className="w-12 h-6 bg-primary-container rounded-full relative p-1 cursor-pointer">
+<div className="w-12 h-6 bg-primary-container rounded-full relative p-1">
 <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
 </div>
 </div>
@@ -193,7 +190,7 @@ const SettingsDashboard = () => {
 <div className="text-xs text-on-surface-variant">Custom HTML templates</div>
 </div>
 </div>
-<div className="w-12 h-6 bg-primary-container rounded-full relative p-1 cursor-pointer">
+<div className="w-12 h-6 bg-primary-container rounded-full relative p-1">
 <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
 </div>
 </div>
@@ -207,7 +204,7 @@ const SettingsDashboard = () => {
 <div className="text-xs text-on-surface-variant">Twilio Integration Active</div>
 </div>
 </div>
-<div className="w-12 h-6 bg-surface-container-highest rounded-full relative p-1 cursor-pointer">
+<div className="w-12 h-6 bg-surface-container-highest rounded-full relative p-1">
 <div className="absolute left-1 top-1 w-4 h-4 bg-on-surface-variant rounded-full"></div>
 </div>
 </div>
@@ -226,7 +223,7 @@ const SettingsDashboard = () => {
 </div>
 </div>
 <div className="flex gap-4 w-full md:w-auto">
-<button className="flex-1 md:flex-none px-8 py-3 rounded-xl border border-outline-variant text-on-surface font-bold hover:bg-white/5 transition-all">DISCARD</button>
+<button className="flex-1 md:flex-none px-8 py-3 rounded-xl border border-outline-variant text-on-surface font-bold">DISCARD</button>
 <button className="flex-1 md:flex-none px-8 py-3 rounded-xl bg-primary-container text-white font-bold neon-glow-primary active:scale-95 transition-all">SAVE CONFIGURATION</button>
 </div>
 </div>
@@ -238,15 +235,15 @@ const SettingsDashboard = () => {
 <span className="material-symbols-outlined" data-icon="settings_input_component">settings_input_component</span>
 <span className="text-[10px] font-bold uppercase tracking-wider mt-1">Hardware</span>
 </div>
-<div className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-blue-500 transition-transform active:scale-90">
+<div className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 transition-transform active:scale-90">
 <span className="material-symbols-outlined" data-icon="brush">brush</span>
 <span className="text-[10px] font-bold uppercase tracking-wider mt-1">Branding</span>
 </div>
-<div className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-blue-500 transition-transform active:scale-90">
+<div className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 transition-transform active:scale-90">
 <span className="material-symbols-outlined" data-icon="send">send</span>
 <span className="text-[10px] font-bold uppercase tracking-wider mt-1">Social</span>
 </div>
-<div className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-blue-500 transition-transform active:scale-90">
+<div className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 transition-transform active:scale-90">
 <span className="material-symbols-outlined" data-icon="grid_view">grid_view</span>
 <span className="text-[10px] font-bold uppercase tracking-wider mt-1">Gallery</span>
 </div>
