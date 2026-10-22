@@ -1,10 +1,9 @@
 // Startup readiness checks performed on the splash screen before entering the app.
 // Each check returns a normalized { ok: boolean, detail: string } and never throws.
 
-const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+import { fetchTemplates } from './templates';
 
-// Resolve the layouts URL exactly like ThemeSelection.jsx does.
-const themeLayoutsUrl = process.env.REACT_APP_THEME_LAYOUTS || '/designs/layouts.json';
+const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
 
 // Modes that require a design template. Animation modes (gif, boomerang,
 // wigglegram) don't use templates and are intentionally not checked.
@@ -27,14 +26,10 @@ export async function checkDesigns() {
   }
 
   try {
-    const response = await fetch(themeLayoutsUrl);
-    if (!response.ok) {
-      return { ok: false, detail: `Could not load layouts (HTTP ${response.status})` };
-    }
-    const data = await response.json();
+    const templates = await fetchTemplates();
 
     const missing = modesToCheck.filter(
-      (mode) => !Array.isArray(data[mode]) || data[mode].length === 0
+      (mode) => !Array.isArray(templates[mode]) || templates[mode].length === 0
     );
 
     if (missing.length > 0) {

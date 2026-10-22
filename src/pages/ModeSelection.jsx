@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useCenteredCarousel from '../hooks/useCenteredCarousel';
+import useCenteredCarousel, { useIsLandscape } from '../hooks/useCenteredCarousel';
+import useSwipe from '../hooks/useSwipe';
 import InfoOverlay from '../components/InfoOverlay';
+import ModeStrip from '../components/ModeStrip';
 
 const enabledModes = process.env.REACT_APP_BOOTH_MODES ? process.env.REACT_APP_BOOTH_MODES.split(',') : ['still', 'collage', 'gif', 'boomerang', 'wigglegram']; // Default to all modes if not specified
 const modes = [
@@ -50,21 +52,27 @@ const modes = [
 ];
 
 const visibleModes = modes.filter(mode => enabledModes.includes(mode.id));
+const stripModes = visibleModes.map(mode => [mode.id, mode.title]);
 // Three copies back to back so the carousel can loop infinitely
 const loopedModes = visibleModes.length > 1 ? [...visibleModes, ...visibleModes, ...visibleModes] : visibleModes;
 
 const ModeSelection = () => {
   const [infoOpen, setInfoOpen] = useState(false);
   const navigate = useNavigate();
-  const { containerRef, activeIndex, setItemRef, scrollToIndex } = useCenteredCarousel(visibleModes.length, 'vertical', { loop: true });
+  const { containerRef, activeIndex, setItemRef, scrollToIndex } = useCenteredCarousel(visibleModes.length, 'auto', { loop: true });
   const activeModeIndex = activeIndex % visibleModes.length;
+  const isLandscape = useIsLandscape();
+  const swipe = useSwipe({
+    onSwipeLeft: () => scrollToIndex(activeIndex + 1),
+    onSwipeRight: () => scrollToIndex(activeIndex - 1)
+  });
   return (
     <div className="w-full h-[100dvh] bg-background text-on-surface overflow-hidden">
 
       {/*  TopAppBar  */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16">
         <div className="flex items-center gap-4">
-          <img src="/SnapGo-dark.png" alt="SnapGo" className="h-9 w-auto" />
+          <img onClick={() => navigate('/')} src="/SnapGo-dark.png" alt="SnapGo" className="h-9 w-auto" />
         </div>
         <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-bold tracking-tight text-white whitespace-nowrap">Capture Mode</h1>
         <div className="flex items-center gap-2">
@@ -75,36 +83,26 @@ const ModeSelection = () => {
         </div>
       </header>
 
-      <main className="relative h-full flex flex-row pt-16">
+      <main className="relative h-full flex flex-row landscape:flex-col-reverse pt-16">
 
-        {/*  Side index of Mode labels  */}
-        <nav className="shrink-0 w-28 sm:w-36 flex flex-col justify-center gap-2 pl-4 relative z-20">
-          {visibleModes.map((mode, i) => {
-            const isActive = i === activeModeIndex;
-            return (
-              <button
-                key={mode.id}
-                // Target the middle copy so the loop recentering stays seamless
-                onClick={() => scrollToIndex(visibleModes.length > 1 ? visibleModes.length + i : i)}
-                className={`flex items-center gap-2 min-h-[44px] text-left text-sm transition-all duration-300 active:scale-95 ${
-                  isActive ? 'text-white font-bold' : 'text-on-surface-variant/60'
-                }`}
-              >
-                <span
-                  className={`shrink-0 rounded-full transition-all duration-300 ${
-                    isActive ? 'w-2 h-6 bg-primary' : 'w-1.5 h-1.5 bg-on-surface-variant/40'
-                  }`}
-                ></span>
-                {mode.title}
-              </button>
-            );
-          })}
+        {/*  Index of Mode labels: left side in portrait, bottom row in landscape  */}
+        <nav className="shrink-0 w-14 relative z-20 landscape:w-full landscape:py-4">
+          <ModeStrip
+            vertical={!isLandscape}
+            large
+            modes={stripModes}
+            activeIndex={activeModeIndex}
+            // Target the middle copy so the loop recentering stays seamless
+            onSelect={(i) => scrollToIndex(visibleModes.length > 1 ? visibleModes.length + i : i)}
+            // useSwipe only tracks horizontal drags, so the vertical strip is tap-only
+            swipe={isLandscape ? swipe : undefined}
+          />
         </nav>
 
-        {/*  Vertical swipe carousel of Modes  */}
+        {/*  Swipe carousel of Modes (vertical in portrait, horizontal in landscape)  */}
         <div
           ref={containerRef}
-          className="flex flex-col items-center gap-6 overflow-y-auto snap-y snap-mandatory no-scrollbar flex-1 min-w-0 min-h-0 py-[20vh] relative z-10"
+          className="flex flex-col landscape:flex-row items-center gap-6 overflow-y-auto landscape:overflow-y-hidden landscape:overflow-x-auto snap-y landscape:snap-x snap-mandatory no-scrollbar flex-1 min-w-0 min-h-0 py-[20vh] landscape:py-0 landscape:px-[25%] relative z-10"
         >
           {loopedModes.map((mode, index) => {
             const isActive = index === activeIndex;
@@ -113,7 +111,7 @@ const ModeSelection = () => {
                 key={`${mode.id}-${index}`}
                 ref={setItemRef(index)}
                 onClick={() => navigate('/photo-capture', { state: { mode: mode.id } })}
-                className={`relative overflow-hidden glass-card rounded-2xl flex flex-col shadow-lg snap-center shrink-0 w-[80%] max-w-2xl h-[60vh] transition-all duration-500 ${
+                className={`relative overflow-hidden glass-card rounded-2xl flex flex-col shadow-lg snap-center shrink-0 w-[80%] max-w-2xl h-[60vh] landscape:w-[min(45vw,36rem)] landscape:h-[80%] landscape:max-w-none transition-all duration-500 ${
                   isActive ? 'opacity-100 scale-100' : 'opacity-40 grayscale scale-95'
                 }`}
               >
@@ -146,12 +144,9 @@ const ModeSelection = () => {
                 </div>
 
                 {/* Content */}
-                <div className="p-6 flex flex-col shrink-0 relative z-10 bg-surface/50 backdrop-blur-sm">
-                  <h3 className="text-xl font-bold text-white mb-2 flex items-center justify-between">
-                    {mode.title}
-                    <span className="material-symbols-outlined text-primary transition-transform duration-300" data-icon="arrow_forward">arrow_forward</span>
-                  </h3>
-                  <p className="text-sm text-on-surface-variant">{mode.desc}</p>
+                <div className="p-6 flex items-center justify-between gap-4 shrink-0 relative z-10 bg-surface-container-highest/50 backdrop-blur-sm">
+                  <p className="text-s text-on-surface-variant">{mode.desc}</p>
+                  <span className="material-symbols-outlined text-primary transition-transform duration-300" data-icon="arrow_forward">arrow_forward</span>
                 </div>
               </div>
             );

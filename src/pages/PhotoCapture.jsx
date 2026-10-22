@@ -5,10 +5,16 @@ import { useWebsocket } from '../contexts/WebsocketContext';
 import { useNavigate } from 'react-router-dom';
 import InfoOverlay from '../components/InfoOverlay';
 import useSwipe from '../hooks/useSwipe';
+import ModeStrip from '../components/ModeStrip';
+import FilterPicker from '../components/FilterPicker';
+import useRemoteSession from '../hooks/useRemoteSession';
+import useDraggable from '../hooks/useDraggable';
+import { QRCodeSVG } from 'qrcode.react';
 
+// Base URL a phone uses to reach this app (the kiosk itself may be on localhost)
+const remoteBaseUrl = (process.env.REACT_APP_REMOTE_BASE_URL || window.location.origin).replace(/\/$/, '');
 const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api';
 const collageLayoutCount = process.env.REACT_APP_COLLAGE_LAYOUT_COUNT ? parseInt(process.env.REACT_APP_COLLAGE_LAYOUT_COUNT) : 4; // Default to 4 photos in collage if not specified
-const burstCount = process.env.REACT_APP_BOOMERANG_BURST_COUNT ? parseInt(process.env.REACT_APP_BOOMERANG_BURST_COUNT) : 10; // Default to 10 photos in boomerang if not specified
 const enabledModes = process.env.REACT_APP_BOOTH_MODES ? process.env.REACT_APP_BOOTH_MODES.split(',') : ['still', 'collage', 'gif', 'boomerang', 'wigglegram']; // Default to all modes if not specified
 const defaultCountdown = process.env.REACT_APP_COUNTDOWN_TIMER_SECONDS ? parseInt(process.env.REACT_APP_COUNTDOWN_TIMER_SECONDS) : 5; // Default to 5 seconds
 const extraShotsForSelection = process.env.REACT_APP_EXTRA_SHOTS_FOR_SELECTION ? parseInt(process.env.REACT_APP_EXTRA_SHOTS_FOR_SELECTION) : 0; // Default to 2 extra shots for selection if not specified
@@ -22,6 +28,10 @@ const allCaptureModes = {
 const captureModes = Object.fromEntries(
   Object.entries(allCaptureModes).filter(([key]) => enabledModes.includes(key))
 );
+// Upper bound for one capture request, so a stalled server can't freeze the screen (clips need time to encode)
+const captureTimeoutMs = 60000;
+// Modes the camera controller records as one animated clip (GIF + MP4)
+const isClipMode = (mode) => mode === 'gif' || mode === 'boomerang';
 
 const PhotoCapture = () => {
   const [infoOpen, setInfoOpen] = useState(false);
@@ -34,11 +44,45 @@ const PhotoCapture = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
   const [remainingShots, setRemainingShots] = useState(null);
+  // Set while a gif/boomerang records: { index, total } of the last GIF pose, or {} for a boomerang
+  const [recording, setRecording] = useState(null);
   const [captureMethod, setCaptureMethod] = useState(null);
   const videoRef = useRef(null);
-  const processingResolveRef = useRef(null);
+  const captureStartedRef = useRef(false);
   const { wsEvent } = useWebsocket();
-  const requestId = uuidv4();
+  const [requestId] = useState(() => uuidv4());
+  // One remote-control session per visit to this screen, so each guest scans a fresh code
+  const [remoteSessionId] = useState(() => uuidv4());
+  const remoteUrl = `${remoteBaseUrl}/remote/${remoteSessionId}`;
+  const [qrExpanded, setQrExpanded] = useState(false);
+  const qrDrag = useDraggable({ storageKey: 'booth.remoteQrOffset' });
+  const [filters, setFilters] = useState([]);
+  const [activeFilter, setActiveFilter] = useState('none');
+  const [filterTray, setFilterTray] = useState(null);
+  const startCaptureRef = useRef(null);
+  const handleModeClickRef = useRef(null);
+  const selectFilterRef = useRef(null);
+  const busyRef = useRef(false);
+  busyRef.current = isCapturing || isProcessing;
+  const sendBoothStateRef = useRef(null);
+
+  const { connected: remoteConnected, peerCount: remotePeerCount, send: sendRemote } = useRemoteSession({
+    sessionId: remoteSessionId,
+    role: 'booth',
+    onMessage: (msg) => {
+      if (msg.type === 'remote_hello' || msg.type === 'remote_joined') {
+        if (sendBoothStateRef.current) sendBoothStateRef.current();
+      } else if (msg.type === 'remote_command') {
+        if (msg.command === 'shutter') {
+          if (startCaptureRef.current) startCaptureRef.current();
+        } else if (msg.command === 'set_mode' && captureModes[msg.mode] && !busyRef.current) {
+          if (handleModeClickRef.current) handleModeClickRef.current([msg.mode]);
+        } else if (msg.command === 'set_filter' && typeof msg.filter === 'string' && !busyRef.current) {
+          if (selectFilterRef.current) selectFilterRef.current(msg.filter);
+        }
+      }
+    }
+  });
 
 
   const bgImgRef = useRef(null);
@@ -65,6 +109,64 @@ const PhotoCapture = () => {
   }, []);
 
   useEffect(() => {
+    fetch(`${apiBaseUrl}/api/filters`)
+      .then(response => response.json())
+      .then(data => {
+        setFilters(data.filters || []);
+        setActiveFilter(data.active || 'none');
+      })
+      .catch(err => console.error("Error fetching filters:", err));
+  }, []);
+
+  const selectFilter = async (id) => {
+    if (isCapturing || isProcessing) return;
+    const previous = activeFilter;
+    setActiveFilter(id);
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/filter`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id })
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      setActiveFilter(data.active || 'none');
+    } catch (error) {
+      console.error("Error setting filter:", error);
+      setActiveFilter(previous);
+    }
+  };
+
+  useEffect(() => {
+    if (wsEvent && wsEvent.type === 'filter_changed') {
+      setActiveFilter(wsEvent.filter || 'none');
+    }
+
+    // Capture events from another booth session shouldn't drive this screen's UI
+    if (wsEvent && wsEvent.session_id && wsEvent.session_id !== requestId) return;
+
+    if (isClipMode(selectedMode) && wsEvent) {
+      if (wsEvent.type === 'camera_action') {
+        if (wsEvent.action === 'recording_started') {
+          setRecording({});
+        } else if (wsEvent.action === 'frame_captured') {
+          // Flash on each GIF pose so guests know when to change it
+          setRecording({ index: wsEvent.index, total: wsEvent.total });
+          setIsFlashing(true);
+          setTimeout(() => setIsFlashing(false), 100);
+        } else if (wsEvent.action === 'encoding') {
+          setRecording(null);
+          setIsProcessing(true);
+        }
+      } else if (wsEvent.type === 'capture_success' || wsEvent.type === 'capture_error') {
+        setRecording(null);
+        setIsProcessing(false);
+      }
+      return;
+    }
+
     if (captureMethod === "gphoto" && wsEvent && wsEvent.type === 'camera_action') {
       if (wsEvent.action === 'capturing_image') {
         // Trigger flash effect
@@ -77,10 +179,6 @@ const PhotoCapture = () => {
         }, 500); // Delay flash slightly to sync with actual capture
       } else if (wsEvent.action === 'capture_completed') {
         setIsProcessing(false);
-        if (processingResolveRef.current) {
-          processingResolveRef.current();
-          processingResolveRef.current = null;
-        }
       }
     }
 
@@ -93,10 +191,6 @@ const PhotoCapture = () => {
       }, 100); // Quick flash duration
     } else if (captureMethod === "stream" && wsEvent && wsEvent.type === 'capture_success') {
       setIsProcessing(false);
-      if (processingResolveRef.current) {
-        processingResolveRef.current();
-        processingResolveRef.current = null;
-      }
     }
   }, [wsEvent]);
 
@@ -137,29 +231,31 @@ const PhotoCapture = () => {
     disabled: isCapturing || isProcessing
   });
 
+  // Resolves once the capture request settles. The HTTP response is the source of truth:
+  // the server broadcasts capture_success before replying, so waiting on the WS event races.
   const takePhoto = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), captureTimeoutMs);
     try {
-      const results = await fetch(`${apiBaseUrl}/api/capture`, {
+      const response = await fetch(`${apiBaseUrl}/api/capture`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ method: captureMethod, id: requestId, mode: selectedMode })
+        body: JSON.stringify({ method: captureMethod, id: requestId, mode: selectedMode }),
+        signal: controller.signal
       });
-
-      results.json().then(data => {
-      }).catch(err => {
-        console.error("Error parsing capture response:", err);
-      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.success === false) {
+        console.error("Capture failed:", data.error || data.detail || `HTTP ${response.status}`);
+      }
     } catch (error) {
       console.error("Error taking photo:", error);
+    } finally {
+      clearTimeout(timeoutId);
+      setRecording(null);
       setIsProcessing(false);
-      return Promise.resolve(); // Resolve immediately on error to avoid hanging
     }
-
-    return new Promise(resolve => {
-      processingResolveRef.current = resolve;
-    });
   }
 
   const getCaptureMethodForMode = (mode) => {
@@ -170,22 +266,7 @@ const PhotoCapture = () => {
     }
   };
 
-  const takeBurstShots = (delay = 150) => {
-    return new Promise((resolve) => {
-      let count = 0;
-      const intervalMs = delay; // Delay between burst shots
-      const burstInterval = setInterval(() => {
-        takePhoto();
-        count++;
-        if (count >= burstCount) {
-          clearInterval(burstInterval);
-          setTimeout(() => resolve(), 1000);
-        }
-      }, intervalMs);
-    });
-  };
-
-  const runCountdown = (isBurst = false, delay = 150) => {
+  const runCountdown = () => {
     return new Promise((resolve) => {
       let _countdown = defaultCountdown;
       setCountdown(_countdown);
@@ -195,27 +276,26 @@ const PhotoCapture = () => {
         setCountdown(_countdown);
         if (_countdown === 0) {
           clearInterval(intervalId);
-          if (isBurst) {
-            takeBurstShots(delay).then(resolve);
-          } else {
-            takePhoto().then(() => {
-              resolve();
-            });
-          }
+          takePhoto().then(() => {
+            resolve();
+          });
         }
       }, 1000);
     });
   };
 
   const startCapture = async () => {
-    if (isCapturing || isProcessing) return; // Prevent multiple clicks
+    // Prevent multiple clicks; the ref also guards a kiosk tap and a remote shutter landing before a re-render
+    if (isCapturing || isProcessing || captureStartedRef.current) return;
+    captureStartedRef.current = true;
 
+    setQrExpanded(false);
+    setFilterTray(null);
     setIsCapturing(true);
 
-    if (selectedMode === 'boomerang') {
-      await runCountdown(true);
-    } else if (selectedMode === 'gif') {
-      await runCountdown(true, 500);
+    if (isClipMode(selectedMode)) {
+      // The camera controller records the whole clip from a single request
+      await runCountdown();
     } else if (/still|collage/gi.test(selectedMode)) {
       const photosToTake = selectedMode === 'still' ? 1 + extraShotsForSelection : collageLayoutCount + extraShotsForSelection; // Take extra shots for still to allow for selection
       for (let i = 0; i < photosToTake; i++) {
@@ -234,6 +314,30 @@ const PhotoCapture = () => {
 
   };
 
+  // Keep the remote handlers pointed at the latest render's closures
+  startCaptureRef.current = startCapture;
+  handleModeClickRef.current = handleModeClick;
+  selectFilterRef.current = (id) => {
+    if (id === 'none' || filters.some(f => f.id === id)) selectFilter(id);
+  };
+  sendBoothStateRef.current = () => sendRemote({
+    type: 'booth_state',
+    mode: selectedMode,
+    modes: Object.entries(captureModes),
+    isCapturing,
+    isProcessing,
+    countdown,
+    remainingShots,
+    filters,
+    activeFilter
+  });
+
+  useEffect(() => {
+    if (remoteConnected) sendBoothStateRef.current();
+  }, [selectedMode, isCapturing, isProcessing, countdown, remainingShots, filters, activeFilter, remoteConnected]);
+
+  const remoteCountLabel = `${remotePeerCount} remote${remotePeerCount === 1 ? '' : 's'} connected`;
+
   return (
     <div className="w-full h-screen bg-background text-on-surface">
 
@@ -247,8 +351,14 @@ const PhotoCapture = () => {
       </div>
       {/*  Top AppBar (Suppressed standard but kept functional identity)  */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16">
-        <img src="/SnapGo-dark.png" alt="SnapGo" className="h-9 w-auto" />
+        <img onClick={() => navigate('/')} src="/SnapGo-dark.png" alt="SnapGo" className="h-9 w-auto" />
         <div className="flex items-center gap-4">
+          {remotePeerCount > 0 && (
+            <div title={remoteCountLabel} className="flex items-center gap-1 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-semibold border border-white/20 backdrop-blur-md">
+              <span className="material-symbols-outlined text-base">phonelink_ring</span>
+              {remotePeerCount}
+            </div>
+          )}
           {/collage|still/gi.test(selectedMode) && remainingShots !== null && (
             <div className="bg-black/50 text-white px-3 py-1 rounded-full text-sm font-semibold border border-white/20 backdrop-blur-md">
               Shots left: {remainingShots}
@@ -265,7 +375,10 @@ const PhotoCapture = () => {
         <div className={`flex flex-col items-center transition-all duration-300 ${(isCapturing || isProcessing) ? 'animate-pulse' : ''}`}>
           <div className={`bg-white/10 backdrop-blur-xl border border-white/20 px-8 py-3 rounded-full mb-8 absolute top-1/4 transition-opacity duration-300 ${(isCapturing || isProcessing) ? 'opacity-100' : 'opacity-0'}`}>
             <span className="text-white text-sm font-bold tracking-[0.2em] uppercase">
-              {isProcessing ? 'PROCESSING...' : countdown === 1 ? 'SMILE' : 'GET READY'}
+              {isProcessing ? 'PROCESSING...'
+                : recording?.total ? `POSE ${recording.index} / ${recording.total}`
+                : recording ? 'MOVE!'
+                : countdown === 1 ? 'SMILE' : 'GET READY'}
             </span>
           </div>
           <div className="relative flex items-center justify-center aspect-square min-w-[14rem] md:min-w-[18rem]">
@@ -314,60 +427,78 @@ const PhotoCapture = () => {
       </main>
       {/*  Bottom Controls Area  */}
       <div className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center pb-12 px-8">
-        {/*  Shutter Button Container  */}
-        <div className="relative flex items-center justify-center">
-          {/*  Animated outer ring (visual only)  */}
-          <div className={`absolute w-24 h-24 rounded-full border-2 border-white/30 transition-all duration-300 opacity-20 ${(isCapturing || isProcessing) ? 'animate-ping border-primary' : ''}`}></div>
-          {/*  Main Shutter Button  */}
-          <button
-            className={`relative w-20 h-20 rounded-full bg-white flex items-center justify-center transition-transform duration-150 shutter-glow ${(isCapturing || isProcessing) ? 'scale-90 bg-primary/20' : 'active:scale-90'}`}
-            onClick={startCapture}
-            disabled={isCapturing || isProcessing}
-          >
-            <div className="w-16 h-16 rounded-full border-4 border-slate-900/10 bg-white"></div>
-          </button>
-        </div>
-        {/*  Mode Selector  */}
-        <div
-          {...swipeHandlers}
-          className="mt-8 relative w-full overflow-hidden flex justify-center items-center h-12 touch-pan-y select-none"
-          style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 20%, black 80%, transparent)', maskImage: 'linear-gradient(to right, transparent, black 20%, black 80%, transparent)' }}
+        {/*  Filter Picker, arced around the shutter  */}
+        <FilterPicker
+          filters={filters}
+          active={activeFilter}
+          onSelect={selectFilter}
+          openKind={filterTray}
+          onOpenKindChange={setFilterTray}
+          disabled={isCapturing || isProcessing}
+          arcHidden={isCapturing || isProcessing}
+          radius={120}
         >
-          <div className="relative w-full max-w-md h-full flex justify-center items-center">
-            {Object.entries(captureModes).map((captureMode, i) => {
-              // Calculate shortest distance in a circular array
-              let offset = (i - Object.keys(captureModes).indexOf(selectedMode)) % Object.entries(captureModes).length;
-              if (offset < -Math.floor(Object.entries(captureModes).length / 2)) offset += Object.entries(captureModes).length;
-              if (offset > Math.floor(Object.entries(captureModes).length / 2)) offset -= Object.entries(captureModes).length;
-
-              const isCenter = offset === 0;
-              const distance = Math.abs(offset);
-
-              return (
-                <span
-                  key={captureMode[0]}
-                  onClick={() => { if (!wasDrag.current && !isCapturing && !isProcessing) handleModeClick(captureMode); }}
-                  className={`absolute text-xs font-bold tracking-widest uppercase whitespace-nowrap ${isDragging ? '' : 'transition-all duration-300 ease-out'}
-                    ${isCenter
-                      ? 'text-white border-b-2 border-primary pb-1'
-                      : 'text-white/40 pb-1'}`}
-                  style={{
-                    transform: `translateX(${offset * 120 + dragX}px) scale(${isCenter ? 1 : 0.85})`,
-                    opacity: distance === 0 ? 1 : distance === 1 ? 0.6 : 0.2,
-                    zIndex: 10 - distance
-                  }}
-                >
-                  {captureMode[1]}
-                </span>
-              );
-            })}
+          {/*  Shutter Button Container  */}
+          <div className="relative flex items-center justify-center">
+            {/*  Animated outer ring (visual only)  */}
+            <div className={`absolute w-24 h-24 rounded-full border-2 border-white/30 transition-all duration-300 opacity-20 ${(isCapturing || isProcessing) ? 'animate-ping border-primary' : ''}`}></div>
+            {/*  Main Shutter Button  */}
+            <button
+              className={`relative w-20 h-20 rounded-full bg-white flex items-center justify-center transition-transform duration-150 shutter-glow ${(isCapturing || isProcessing) ? 'scale-90 bg-primary/20' : 'active:scale-90'}`}
+              onClick={startCapture}
+              disabled={isCapturing || isProcessing}
+            >
+              <div className="w-16 h-16 rounded-full border-4 border-slate-900/10 bg-white"></div>
+            </button>
           </div>
-        </div>
+        </FilterPicker>
+        {/*  Mode Selector  */}
+        <ModeStrip
+          className="mt-8"
+          modes={Object.entries(captureModes)}
+          activeIndex={Object.keys(captureModes).indexOf(selectedMode)}
+          onSelect={(i) => handleModeClick(Object.entries(captureModes)[i])}
+          swipe={{ dragX, isDragging, handlers: swipeHandlers, wasDrag }}
+          disabled={isCapturing || isProcessing}
+        />
       </div>
       {/*  Hidden Navigation Shell Logic (Suppressed per "Task-Focused" rule but structure present if needed for transitions)  */}
       <nav className="hidden">
         {/*  BottomNavBar would be here if not in camera mode  */}
       </nav>
+
+      {/*  Remote Control QR  */}
+      {remoteConnected && (
+        <button
+          ref={qrDrag.ref}
+          {...qrDrag.handlers}
+          onClick={() => { if (!qrDrag.wasDrag.current) setQrExpanded(true); }}
+          disabled={isCapturing}
+          style={{ transform: `translate(${qrDrag.offset.x}px, ${qrDrag.offset.y}px)` }}
+          className={`fixed right-6 bottom-32 z-50 flex flex-col items-center gap-2 p-3 rounded-2xl bg-black/50 border border-white/20 backdrop-blur-md transition-opacity duration-300 touch-none select-none ${qrDrag.isDragging ? 'cursor-grabbing' : 'cursor-grab'} ${isCapturing ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+        >
+          <div className="bg-white p-1.5 rounded-lg">
+            <QRCodeSVG value={remoteUrl} size={84} />
+          </div>
+          <span className="flex items-center gap-1 text-white text-[10px] font-bold tracking-widest uppercase">
+            <span className="material-symbols-outlined text-sm">{remotePeerCount > 0 ? 'phonelink_ring' : 'qr_code_scanner'}</span>
+            {remotePeerCount > 0 ? remoteCountLabel : 'Scan to control'}
+          </span>
+        </button>
+      )}
+
+      {qrExpanded && (
+        <div
+          onClick={() => setQrExpanded(false)}
+          className="fixed inset-0 z-[90] flex flex-col items-center justify-center gap-6 bg-black/80 backdrop-blur-md"
+        >
+          <div className="bg-white p-5 rounded-3xl">
+            <QRCodeSVG value={remoteUrl} size={280} />
+          </div>
+          <p className="text-white text-sm font-bold tracking-[0.2em] uppercase">Scan with your phone to control the camera</p>
+          <p className="text-white/50 text-xs">Tap anywhere to close</p>
+        </div>
+      )}
 
       <InfoOverlay open={infoOpen} onClose={() => setInfoOpen(false)} />
     </div>

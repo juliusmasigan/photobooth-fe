@@ -10,6 +10,7 @@ import ModeSelection from './pages/ModeSelection';
 import PhotoCapture from './pages/PhotoCapture';
 import PhotoSelection from './pages/PhotoSelection';
 import PrintShare from './pages/PrintShare';
+import RemoteControl from './pages/RemoteControl';
 import SettingsDashboard from './pages/SettingsDashboard';
 import SplashScreen from './pages/SplashScreen';
 import ThemeSelection from './pages/ThemeSelection';
@@ -69,7 +70,7 @@ const STARTUP_CHECKS = [
   { id: 'printer', label: 'Checking printer', run: checkPrinter },
 ];
 
-function App() {
+function BoothApp() {
   const [isReady, setIsReady] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Initializing Engine');
   const [checks, setChecks] = useState(() =>
@@ -121,7 +122,7 @@ function App() {
     // Enter kiosk mode (fullscreen + portrait lock) on the first user gesture —
     // browsers forbid these APIs without one. One-shot: detaches after firing.
     const onFirstGesture = () => {
-      enterKiosk();
+      // enterKiosk();
       window.removeEventListener('pointerdown', onFirstGesture);
       window.removeEventListener('touchstart', onFirstGesture);
     };
@@ -168,6 +169,22 @@ function App() {
       </WebsocketProvider>
     </Router>
   );
+}
+
+// Phones that scanned the capture screen's QR code get only the remote page —
+// no startup checks, kiosk mode, idle timer or camera event socket.
+function RemoteApp() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/remote/:sessionId" element={<RemoteControl />} />
+      </Routes>
+    </Router>
+  );
+}
+
+function App() {
+  return window.location.pathname.startsWith('/remote/') ? <RemoteApp /> : <BoothApp />;
 }
 
 export default App;

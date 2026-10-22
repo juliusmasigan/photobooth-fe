@@ -14,15 +14,17 @@ const PhotoSelection = () => {
   const { mode, requestId, design } = location.state || {};
   const [photoSelections, setPhotoSelections] = useState([]);
   const [selectedPhotos, setSelectedPhotos] = useState([]);
-  const [numPhotosToSelect] = useState(mode === 'still' ? 1 : collageLayoutCount); // Default to 1 for still, layout count for collage
-  const { containerRef, activeIndex, setItemRef } = useCenteredCarousel(photoSelections.length);
+  // One photo per design placeholder; otherwise 1 for still and animated clips, layout count for collage
+  const [numPhotosToSelect] = useState(design?.imgIds?.length || (/still|gif|boomerang/.test(mode) ? 1 : collageLayoutCount));
+  const { containerRef, activeIndex, setItemRef } = useCenteredCarousel(photoSelections.length, 'auto');
 
   useEffect(() => {
     const result = async () => {
       try {
         const response = await fetch(`${apiBaseUrl}/api/photos?prefix=${requestId}`);
         const data = await response.json();
-        setPhotoSelections(data.photos || []);
+        // Each entry pairs a capture's image with its MP4 (videoUrl), if any
+        setPhotoSelections((data.photos || []));
       } catch (err) {
         console.error('Error fetching photo results:', err);
       }
@@ -49,7 +51,7 @@ const PhotoSelection = () => {
       {/*  TopAppBar  */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16">
         <div className="flex items-center gap-4">
-          <img src="/SnapGo-dark.png" alt="SnapGo" className="h-9 w-auto" />
+          <img onClick={() => navigate('/')} src="/SnapGo-dark.png" alt="SnapGo" className="h-9 w-auto" />
         </div>
         <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-bold tracking-tight text-white whitespace-nowrap">
           <span className="text-white">Select your</span>
@@ -82,22 +84,22 @@ const PhotoSelection = () => {
         {/*  Photo swipe carousel (vertical)  */}
         <div
           ref={containerRef}
-          className="flex flex-col items-center gap-6 overflow-y-auto snap-y snap-mandatory no-scrollbar flex-1 min-h-0 py-[15vh]"
+          className="flex flex-col landscape:flex-row items-center gap-6 overflow-y-auto landscape:overflow-y-hidden landscape:overflow-x-auto snap-y landscape:snap-x snap-mandatory no-scrollbar flex-1 min-h-0 py-[15vh] landscape:py-0 landscape:px-[25%]"
         >
           {photoSelections.map((photo, index) => {
             const isSelected = selectedPhotos.includes(photo);
             const isActive = index === activeIndex;
             return (
               <div
-                key={photo.id}
+                key={photo.imageUrl}
                 ref={setItemRef(index)}
                 onClick={() => toggleSelection(photo)}
-                className={`relative rounded-xl overflow-hidden glass-card snap-center shrink-0 w-[80%] max-w-2xl h-[60vh] transition-all duration-500 ${isSelected ? 'selected-ring' : ''} ${isActive ? 'opacity-100 scale-100' : 'opacity-40 grayscale scale-95'}`}
+                className={`relative rounded-xl overflow-hidden glass-card snap-center shrink-0 w-[80%] max-w-2xl h-[60vh] landscape:w-[min(55vw,40rem)] landscape:h-[85%] landscape:max-w-none transition-all duration-500 ${isSelected ? 'selected-ring' : ''} ${isActive ? 'opacity-100 scale-100' : 'opacity-40 grayscale scale-95'}`}
               >
                 <img
                   className="w-full h-full object-cover transition-all duration-500"
                   alt={`Photo ${index + 1}`}
-                  src={`${apiBaseUrl}${photo.path}`}
+                  src={`${apiBaseUrl}${photo.imageUrl}`}
                 />
                 <div className={`absolute inset-0 transition-colors ${isSelected ? 'bg-primary/20' : 'bg-black/10'}`}></div>
                 <div className={`absolute top-3 right-3 rounded-full w-9 h-9 flex items-center justify-center ${isSelected ? 'bg-primary-container text-on-primary-container shadow-lg' : 'bg-white/20 backdrop-blur-md border border-white/20'}`}>
@@ -116,7 +118,7 @@ const PhotoSelection = () => {
       <footer className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/40 backdrop-blur-xl dark:bg-slate-950/40 border-t border-white/10 px-6 py-6 h-24 flex items-center justify-center gap-4">
         <div className="w-full max-w-4xl flex items-center justify-end gap-6">
           <button
-            onClick={() => navigate("/theme-selection", { state: { mode, selectedPhotos } })}
+            onClick={() => navigate("/print-share", { state: { mode, requestId, design, selectedPhotos } })}
             disabled={selectedPhotos.length !== numPhotosToSelect}
             className={`flex-1 max-w-[240px] h-14 rounded-xl font-bold tracking-wide uppercase text-sm flex items-center justify-center gap-2 transition-all duration-200 ${
               selectedPhotos.length === numPhotosToSelect

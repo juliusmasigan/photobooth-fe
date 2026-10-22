@@ -2,31 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useCenteredCarousel from '../hooks/useCenteredCarousel';
 import InfoOverlay from '../components/InfoOverlay';
-
-const themeLayoutsUrl = process.env.REACT_APP_THEME_LAYOUTS || '/designs/layouts.json';
+import { fetchTemplates } from '../utils/templates';
 
 const ThemeSelection = () => {
   const [infoOpen, setInfoOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { mode, requestId } = location.state || {};
+  const { mode = 'collage', requestId } = location.state || {};
 
   const [designs, setDesigns] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { containerRef, activeIndex, setItemRef } = useCenteredCarousel(designs.length);
+  const { containerRef, activeIndex, setItemRef } = useCenteredCarousel(designs.length, 'auto');
 
   useEffect(() => {
     const getDesigns = async () => {
       setLoading(true);
       const foundDesigns = [];
       try {
-        const response = await fetch(themeLayoutsUrl);
-        const data = await response.json();
-        const layoutsForMode = data[mode] || [];
+        const templates = await fetchTemplates();
+        const layoutsForMode = templates[mode] || [];
         for (const layout of layoutsForMode) {
           foundDesigns.push({
             id: layout.id,
-            url: layout.url
+            name: layout.name,
+            url: layout.url,
+            imgIds: layout.imgIds || []
           });
         }
         setDesigns(foundDesigns);
@@ -49,7 +49,7 @@ const ThemeSelection = () => {
       {/*  TopAppBar  */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16">
         <div className="flex items-center gap-4">
-          <img src="/SnapGo-dark.png" alt="SnapGo" className="h-9 w-auto" />
+          <img onClick={() => navigate('/')} src="/SnapGo-dark.png" alt="SnapGo" className="h-9 w-auto" />
         </div>
         <h1 className="absolute left-1/2 -translate-x-1/2 text-lg font-bold tracking-tight text-white whitespace-nowrap">Choose a Design</h1>
         <div className="flex items-center gap-2">
@@ -70,14 +70,14 @@ const ThemeSelection = () => {
         ) : designs.length === 0 ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="max-w-md mx-auto p-6 bg-white/5 rounded-xl text-center text-slate-400">
-              No designs available for this mode. Check the public/designs/{mode} directory.
+              No designs available for this mode.
             </div>
           </div>
         ) : (
           /*  Vertical swipe carousel of Designs  */
           <div
             ref={containerRef}
-            className="flex flex-col items-center gap-6 overflow-y-auto snap-y snap-mandatory no-scrollbar flex-1 min-h-0 py-[20vh] relative z-10"
+            className="flex flex-col landscape:flex-row items-center gap-6 overflow-y-auto landscape:overflow-y-hidden landscape:overflow-x-auto snap-y landscape:snap-x snap-mandatory no-scrollbar flex-1 min-h-0 py-[20vh] landscape:py-0 landscape:px-[25%] relative z-10"
           >
             {designs.map((design, index) => {
               const isActive = index === activeIndex;
@@ -86,7 +86,7 @@ const ThemeSelection = () => {
                   key={design.id}
                   ref={setItemRef(index)}
                   onClick={() => handleSelect(design)}
-                  className={`relative overflow-hidden glass-card rounded-2xl flex flex-col shadow-lg snap-center shrink-0 w-[80%] max-w-2xl h-[60vh] transition-all duration-500 ${
+                  className={`relative overflow-hidden glass-card rounded-2xl flex flex-col shadow-lg snap-center shrink-0 w-[80%] max-w-2xl h-[60vh] landscape:w-[min(45vw,36rem)] landscape:h-[80%] landscape:max-w-none transition-all duration-500 ${
                     isActive ? 'opacity-100 scale-100' : 'opacity-40 grayscale scale-95'
                   }`}
                 >

@@ -45,9 +45,9 @@ const IdleScreen = () => {
 
   useEffect(() => {
     const getCaptures = async () => {
-      const response = await fetch(`${apiBaseUrl}/api/photos`);
+      const response = await fetch(`${apiBaseUrl}/api/prints`);
       const data = await response.json();
-      setCaptures(data.photos || []);
+      setCaptures(data.prints || []);
     };
 
     getCaptures();
@@ -162,7 +162,7 @@ const IdleScreen = () => {
                     <img
                       className="w-full h-full object-cover"
                       alt={capture.id}
-                      src={`${apiBaseUrl}${capture.path}`}
+                      src={`${apiBaseUrl}${capture.imageUrl}`}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
                     <div className="absolute bottom-3 left-3 pointer-events-none">
@@ -214,7 +214,7 @@ const IdleScreen = () => {
               <img
                 className={`w-full h-full ${ratio ? 'object-cover' : 'object-contain'}`}
                 alt={capture.id}
-                src={`${apiBaseUrl}${capture.path}`}
+                src={`${apiBaseUrl}${capture.imageUrl}`}
               />
               <button
                 onClick={closePreview}

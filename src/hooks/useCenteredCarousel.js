@@ -4,7 +4,9 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
  * Tracks which item in a scrollable carousel is closest to the container's
  * center, so the centered item can be highlighted and the rest dimmed.
  *
- * Works for vertical or horizontal scrolling.
+ * Works for vertical or horizontal scrolling. With axis 'auto' it scrolls
+ * horizontally in landscape and vertically in portrait, following rotation and
+ * keeping the active item centered; pair it with Tailwind `landscape:` classes.
  *
  * With `{ loop: true }` the carousel scrolls infinitely: the caller renders
  * the items three times in a row, and the hook keeps the view on the middle
@@ -21,7 +23,10 @@ export default function useCenteredCarousel(count, axis = 'vertical', { loop = f
   const itemRefs = useRef([]);
   const [activeIndex, setActiveIndex] = useState(loop && count > 1 ? count : 0);
   const looping = loop && count > 1;
-  const horizontal = axis === 'horizontal';
+  const isLandscape = useIsLandscape(axis === 'auto');
+  const horizontal = axis === 'horizontal' || (axis === 'auto' && isLandscape);
+  const activeIndexRef = useRef(activeIndex);
+  activeIndexRef.current = activeIndex;
 
   const setItemRef = useCallback(
     (index) => (el) => {
@@ -30,19 +35,20 @@ export default function useCenteredCarousel(count, axis = 'vertical', { loop = f
     []
   );
 
-  // Start on the first item of the middle copy, before the first paint.
+  // Center the active item before paint: on mount (the first item of the
+  // middle copy when looping), when items load, and after the axis flips.
   useLayoutEffect(() => {
     const container = containerRef.current;
-    const first = itemRefs.current[count];
-    if (!looping || !container || !first) return;
+    const el = itemRefs.current[activeIndexRef.current];
+    if (!container || !el) return;
     const rect = container.getBoundingClientRect();
-    const r = first.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
     if (horizontal) {
       container.scrollLeft += r.left + r.width / 2 - (rect.left + rect.width / 2);
     } else {
       container.scrollTop += r.top + r.height / 2 - (rect.top + rect.height / 2);
     }
-  }, [count, looping, horizontal]);
+  }, [count, horizontal]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -137,4 +143,25 @@ export default function useCenteredCarousel(count, axis = 'vertical', { loop = f
   );
 
   return { containerRef, activeIndex, setItemRef, scrollToIndex };
+}
+
+const landscapeQuery = '(orientation: landscape)';
+
+// Tracks whether the screen is landscape, using the same media query as
+// Tailwind's `landscape:` variant so the JS axis and the CSS agree.
+export function useIsLandscape(enabled = true) {
+  const [isLandscape, setIsLandscape] = useState(
+    () => enabled && window.matchMedia(landscapeQuery).matches
+  );
+
+  useEffect(() => {
+    if (!enabled) return;
+    const mql = window.matchMedia(landscapeQuery);
+    const onChange = () => setIsLandscape(mql.matches);
+    onChange();
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, [enabled]);
+
+  return isLandscape;
 }
